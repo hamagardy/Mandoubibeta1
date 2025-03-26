@@ -39,6 +39,7 @@ const translations = {
     exportAsPDF: "Export as PDF",
     exportAsExcel: "Export as Excel",
     noSalesData: "No sales data available for forecasting.",
+    loading: "Loading...",
   },
   ar: {
     salesForecasting: "توقعات المبيعات",
@@ -48,6 +49,7 @@ const translations = {
     exportAsPDF: "تصدير كـ PDF",
     exportAsExcel: "تصدير كـ Excel",
     noSalesData: "لا توجد بيانات مبيعات متاحة للتنبؤ.",
+    loading: "جارٍ التحميل...",
   },
   ku: {
     salesForecasting: "پێشبینیکردنی فرۆشتن",
@@ -57,6 +59,7 @@ const translations = {
     exportAsPDF: "پەیوەندیدانی بە PDF",
     exportAsExcel: "پەیوەندیدانی بە Excel",
     noSalesData: "هیچ داتای فرۆشتنێک بۆ پێشبینیکردن بەردەست نیە.",
+    loading: "بارکردن...",
   },
 };
 
@@ -64,7 +67,7 @@ const SalesForecasting = ({
   currency,
   exchangeRate,
   role,
-  monthlyTargetPrices,
+  monthlyTargetPrices = {}, // Default to empty object if not provided
 }) => {
   const [sales, setSales] = useState([]);
   const [forecastData, setForecastData] = useState([]);
@@ -138,7 +141,6 @@ const SalesForecasting = ({
 
   const handleExportPDF = () => {
     const input = document.getElementById("forecast-container");
-
     html2canvas(input, {
       scale: 2,
       useCORS: true,
@@ -183,7 +185,6 @@ const SalesForecasting = ({
     saveAs(data, "sales_forecast.xlsx");
   };
 
-  // Updated chartData to reflect individual monthly targets
   const chartData = {
     labels: forecastData.slice(0, 12).map((data) => data.month),
     datasets: [
@@ -196,11 +197,13 @@ const SalesForecasting = ({
       },
       {
         label: "Target",
-        data: forecastData
-          .slice(0, 12)
-          .map((_, index) =>
-            priceDisplay(monthlyTargetPrices[index] || 13000000)
-          ),
+        data: forecastData.slice(0, 12).map((_, index) =>
+          priceDisplay(
+            monthlyTargetPrices && typeof monthlyTargetPrices === "object"
+              ? monthlyTargetPrices[index] || 13000000
+              : 13000000
+          )
+        ),
         backgroundColor: "rgba(94, 114, 228, 0.2)",
         borderColor: "#5e72e4",
         borderWidth: 1,
@@ -251,9 +254,7 @@ const SalesForecasting = ({
                 {forecastData.slice(0, 12).map((data, index) => (
                   <div
                     key={index}
-                    className={`forecast-item ${
-                      index < 11 ? "border-b" : ""
-                    } py-2`}
+                    className={`forecast-item ${index < 11 ? "border-b" : ""} py-2`}
                   >
                     <div className="flex justify-between">
                       <span className="text-[#1f2a44] font-medium">
@@ -269,7 +270,11 @@ const SalesForecasting = ({
                     <p className="text-[#67748e] mt-1">
                       Target:{" "}
                       <span className="font-bold">
-                        {priceDisplay(monthlyTargetPrices[index] || 13000000)}{" "}
+                        {priceDisplay(
+                          monthlyTargetPrices && typeof monthlyTargetPrices === "object"
+                            ? monthlyTargetPrices[index] || 13000000
+                            : 13000000
+                        )}{" "}
                         {currency}
                       </span>
                     </p>
