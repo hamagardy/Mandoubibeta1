@@ -1591,3 +1591,267 @@ html[lang="ar"] .navbar-menu.active {
     justify-content: flex-end;
   }
 }
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
+  background-color: #f4f7fe;
+  color: #1f2a44;
+  margin: 0;
+  padding: 0;
+  padding-top: env(safe-area-inset-top); /* Notch padding */
+  padding-bottom: env(safe-area-inset-bottom); /* Home indicator padding */
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling */
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+}
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.card,
+.sales-forecast-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 80%;
+  max-width: 600px; /* Prevent over-expansion */
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center; /* Center within flex parent */
+  box-sizing: border-box; /* Include padding in width */
+}
+
+/* Sales Forecast Specific */
+.sales-forecast-container {
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.forecast-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+@media (max-width: 480px) {
+  .card,
+  .sales-forecast-card {
+    width: 90%; /* Slightly wider on small screens */
+    padding: 1rem;
+  }
+}
+.export-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 1rem auto;
+  flex-wrap: wrap; /* Prevent overflow */
+  padding-bottom: env(
+    safe-area-inset-bottom
+  ); /* Avoid home indicator overlap */
+}
+
+.export-buttons button {
+  width: auto;
+  min-width: 120px; /* Minimum size */
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  background-color: #5e72e4;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .export-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .export-buttons button {
+    width: 100%;
+    max-width: 200px; /* Cap width */
+  }
+}
+.navbar {
+  background-color: #ffffff;
+  position: fixed;
+  width: 100vw;
+  height: 70px;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  padding-top: env(safe-area-inset-top);
+  box-sizing: border-box;
+}
+.card:hover,
+.sales-forecast-card:hover,
+.item-card:hover,
+.brochure-card:hover {
+  transform: none; /* Disable transform on iOS touch devices */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
+  background-color: #f4f7fe;
+  color: #1f2a44;
+  margin: 0;
+  padding: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.navbar {
+  background-color: #ffffff;
+  position: fixed;
+  width: 100vw;
+  height: 70px;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  padding-top: env(safe-area-inset-top);
+  box-sizing: border-box;
+}
+
+.card,
+.sales-forecast-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 80%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center;
+  box-sizing: border-box;
+}
+
+.sales-forecast-container {
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.forecast-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.export-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 1rem auto;
+  flex-wrap: wrap;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.export-buttons button {
+  width: auto;
+  min-width: 120px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  background-color: #5e72e4;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .card,
+  .sales-forecast-card {
+    width: 90%;
+    padding: 1rem;
+  }
+  .export-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .export-buttons button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
