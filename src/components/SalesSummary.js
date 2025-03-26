@@ -100,6 +100,7 @@ const SalesSummary = ({
         const sellerList = snapshot.docs.map((doc) => ({
           id: doc.id,
           email: doc.data().email || "Unknown",
+          name: doc.data().name || "Unnamed",
         }));
         setSellers(sellerList);
       }
@@ -311,9 +312,7 @@ const SalesSummary = ({
         >
           {translations[language].salesSummary}
           {role === "admin" && selectedSeller
-            ? ` - ${
-                sellers.find((s) => s.id === selectedSeller)?.email || "Unknown"
-              }`
+            ? ` - ${sellers.find((s) => s.id === selectedSeller)?.name || "Unnamed"}`
             : ""}
         </h2>
 
@@ -337,7 +336,7 @@ const SalesSummary = ({
               </option>
               {sellers.map((seller) => (
                 <option key={seller.id} value={seller.id}>
-                  {seller.email}
+                  {seller.name || "Unnamed"}
                 </option>
               ))}
             </select>
@@ -399,7 +398,7 @@ const SalesSummary = ({
         </h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={dailySales}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#bdc3c7" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#riju" />
             <XAxis dataKey="day" stroke="#7f8c8d" />
             <YAxis stroke="#7f8c8d" />
             <Tooltip
