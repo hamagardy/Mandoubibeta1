@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import {
   collection,
   getDocs,
@@ -7,13 +7,21 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 
 const AdminMembersList = () => {
   const [members, setMembers] = useState([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberPassword, setNewMemberPassword] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("member");
   const [editingMember, setEditingMember] = useState(null);
   const [permissions, setPermissions] = useState({});
+  const [editPassword, setEditPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -24,42 +32,38 @@ const AdminMembersList = () => {
   }, []);
 
   const handleAddMember = async () => {
-    if (!newMemberEmail) return;
-    const newMemberRef = doc(db, "users", newMemberEmail);
-    const defaultPermissions = {
-      salesSummary: true,
-      dailySales: true,
-      salesData: true,
-      salesReports: true,
-      items: newMemberRole === "admin",
-      settings: newMemberRole === "admin",
-      salesForecast: true,
-      adminMembers: newMemberRole === "admin",
-      followUp: newMemberRole === "admin",
-      pharmaLocations: true,
-      brochure: true, // Add brochure permission
-    };
-    await setDoc(newMemberRef, {
-      email: newMemberEmail,
-      role: newMemberRole,
-      permissions:
-        newMemberRole === "admin"
-          ? {
-              ...defaultPermissions,
-              items: true,
-              settings: true,
-              adminMembers: true,
-              followUp: true,
-              brochure: true, // Ensure admin has brochure access
-            }
-          : defaultPermissions,
-      monthlyTargetPrices: {},
-    });
-    setMembers([
-      ...members,
-      {
-        id: newMemberEmail,
+    if (!newMemberEmail || !newMemberName || !newMemberPassword) {
+      setError("Email, name, and password are required.");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        newMemberEmail,
+        newMemberPassword
+      );
+      const user = userCredential.user;
+
+      await updateProfile(user, { displayName: newMemberName });
+
+      const defaultPermissions = {
+        salesSummary: true,
+        dailySales: true,
+        salesData: true,
+        salesReports: true,
+        items: newMemberRole === "admin",
+        settings: newMemberRole === "admin",
+        salesForecast: true,
+        adminMembers: newMemberRole === "admin",
+        followUp: newMemberRole === "admin",
+        pharmaLocations: true,
+        brochure: true,
+      };
+
+      const newMemberData = {
         email: newMemberEmail,
+        name: newMemberName, // Always defined here
         role: newMemberRole,
         permissions:
           newMemberRole === "admin"
@@ -72,14 +76,27 @@ const AdminMembersList = () => {
                 brochure: true,
               }
             : defaultPermissions,
-      },
-    ]);
-    setNewMemberEmail("");
-    setNewMemberRole("member");
+        monthlyTargetPrices: {},
+      };
+
+      await setDoc(doc(db, "users", user.uid), newMemberData);
+      setMembers([...members, { id: user.uid, ...newMemberData }]);
+      setNewMemberEmail("");
+      setNewMemberName("");
+      setNewMemberPassword("");
+      setNewMemberRole("member");
+      setError("");
+    } catch (error) {
+      console.error("Error adding member:", error);
+      setError(error.message);
+    }
   };
 
   const handleEditMember = (member) => {
-    setEditingMember(member);
+    setEditingMember({
+      ...member,
+      name: member.name || "", // Default to empty string if undefined
+    });
     setPermissions(
       member.role === "admin"
         ? {
@@ -93,10 +110,11 @@ const AdminMembersList = () => {
             adminMembers: true,
             followUp: true,
             pharmaLocations: true,
-            brochure: true, // Add brochure permission
+            brochure: true,
           }
         : member.permissions || {}
     );
+    setEditPassword("");
   };
 
   const handleSavePermissions = async () => {
@@ -115,22 +133,29 @@ const AdminMembersList = () => {
             adminMembers: true,
             followUp: true,
             pharmaLocations: true,
-            brochure: true, // Add brochure permission
+            brochure: true,
           }
         : permissions;
-    await setDoc(
-      memberRef,
-      { permissions: updatedPermissions, role: editingMember.role },
-      { merge: true }
-    );
-    setMembers(
-      members.map((m) =>
-        m.id === editingMember.id
-          ? { ...m, permissions: updatedPermissions, role: editingMember.role }
-          : m
-      )
-    );
-    setEditingMember(null);
+
+    const updatedData = {
+      permissions: updatedPermissions,
+      role: editingMember.role,
+      name: editingMember.name || "", // Default to empty string if undefined
+    };
+
+    try {
+      await setDoc(memberRef, updatedData, { merge: true });
+      setMembers(
+        members.map((m) =>
+          m.id === editingMember.id ? { ...m, ...updatedData } : m
+        )
+      );
+      setEditingMember(null);
+      setEditPassword("");
+    } catch (error) {
+      console.error("Error saving permissions:", error);
+      setError(error.message);
+    }
   };
 
   const handleDeleteMember = async (id) => {
@@ -155,7 +180,7 @@ const AdminMembersList = () => {
     adminMembers: "Admin Members",
     followUp: "Follow Up",
     pharmaLocations: "Pharma Locations",
-    brochure: "Brochure", // Add brochure permission
+    brochure: "Brochure",
   };
 
   return (
@@ -168,6 +193,20 @@ const AdminMembersList = () => {
             placeholder="Enter member email"
             value={newMemberEmail}
             onChange={(e) => setNewMemberEmail(e.target.value)}
+            className="input-field"
+          />
+          <input
+            type="text"
+            placeholder="Enter member name"
+            value={newMemberName}
+            onChange={(e) => setNewMemberName(e.target.value)}
+            className="input-field"
+          />
+          <input
+            type="password"
+            placeholder="Enter member password"
+            value={newMemberPassword}
+            onChange={(e) => setNewMemberPassword(e.target.value)}
             className="input-field"
           />
           <select
@@ -185,6 +224,7 @@ const AdminMembersList = () => {
             Add Member
           </button>
         </div>
+        {error && <p className="text-red-500">{error}</p>}
         <ul className="space-y-4">
           {members.map((member) => (
             <li
@@ -193,6 +233,9 @@ const AdminMembersList = () => {
             >
               <div>
                 <p className="font-semibold text-[#1f2a44]">
+                  <strong>Name:</strong> {member.name || "Unnamed"}
+                </p>
+                <p className="text-[#67748e]">
                   <strong>Email:</strong> {member.email}
                 </p>
                 <p className="text-[#67748e]">
@@ -224,8 +267,24 @@ const AdminMembersList = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3 className="modal-title">
-              Edit Permissions for {editingMember.email}
+              Edit {editingMember.name || editingMember.email}
             </h3>
+            <input
+              type="text"
+              placeholder="Update name"
+              value={editingMember.name || ""}
+              onChange={(e) =>
+                setEditingMember({ ...editingMember, name: e.target.value })
+              }
+              className="input-field mb-3"
+            />
+            <input
+              type="password"
+              placeholder="Update password (optional)"
+              value={editPassword}
+              onChange={(e) => setEditPassword(e.target.value)}
+              className="input-field mb-3"
+            />
             <div className="space-y-3">
               {Object.keys(menuPermissions).map((key) => (
                 <div key={key} className="toggle-container">
