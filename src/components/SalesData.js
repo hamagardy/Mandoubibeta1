@@ -219,6 +219,17 @@ const SalesData = ({ currency, exchangeRate, role }) => {
               <p style={{ fontSize: "0.9rem", color: "#67748e" }}>
                 Date: {new Date(sale.date).toLocaleString()}
               </p>
+              {sale.note && (
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#67748e",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  Note: {sale.note}
+                </p>
+              )}
               <select
                 value={sale.status || "not-visited"}
                 onChange={(e) => handleStatusChange(sale.id, e.target.value)}
