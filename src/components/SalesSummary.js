@@ -231,10 +231,22 @@ const SalesSummary = ({
   ];
   const COLORS = ["#1abc9c", "#e74c3c"];
 
-  const dailySales = Array.from({ length: 31 }, (_, day) => ({
+  // Updated dailySales to match the same month as totalSales
+  const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Baghdad" });
+  const currentMonthIndex = new Date(now).getMonth();
+  const currentYear = new Date(now).getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+  const dailySales = Array.from({ length: daysInMonth }, (_, day) => ({
     day: `Day ${day + 1}`,
     total: salesData
-      .filter((sale) => new Date(sale.date).getDate() === day + 1)
+      .filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return (
+          saleDate.getDate() === day + 1 &&
+          saleDate.getMonth() === currentMonthIndex &&
+          saleDate.getFullYear() === currentYear
+        );
+      })
       .reduce((sum, sale) => sum + (sale.totalPrice || 0), 0),
   }));
 
@@ -312,7 +324,9 @@ const SalesSummary = ({
         >
           {translations[language].salesSummary}
           {role === "admin" && selectedSeller
-            ? ` - ${sellers.find((s) => s.id === selectedSeller)?.name || "Unnamed"}`
+            ? ` - ${
+                sellers.find((s) => s.id === selectedSeller)?.name || "Unnamed"
+              }`
             : ""}
         </h2>
 

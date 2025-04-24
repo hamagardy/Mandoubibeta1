@@ -212,6 +212,12 @@ const SalesReports = ({ currency, exchangeRate, role }) => {
                         .join(", ")}
                     </td>
                   </tr>
+                  {sale.note && (
+                    <tr>
+                      <td>Note</td>
+                      <td>{sale.note}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

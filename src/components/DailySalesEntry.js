@@ -219,14 +219,17 @@ const DailySalesEntry = ({
             value={selectedItem ? JSON.stringify(selectedItem) : ""}
           >
             <option value="">{translations[language].selectItem}</option>
-            {items.map((item) => (
-              <option key={item.id} value={JSON.stringify(item)}>
-                {item.name} - {priceDisplay(item.price)} {currency}{" "}
-                {item.verified
-                  ? `(${translations[language].verified})`
-                  : `(${translations[language].notVerified})`}
-              </option>
-            ))}
+            {items
+              .slice() // Create a copy to avoid mutating the original array
+              .sort((a, b) => a.name.localeCompare(b.name)) // Sort by name
+              .map((item) => (
+                <option key={item.id} value={JSON.stringify(item)}>
+                  {item.name} - {priceDisplay(item.price)} {currency}{" "}
+                  {item.verified
+                    ? `(${translations[language].verified})`
+                    : `(${translations[language].notVerified})`}
+                </option>
+              ))}
           </select>
         </div>
         <ul className="mb-4 sale-items-list">

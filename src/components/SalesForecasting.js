@@ -67,13 +67,20 @@ const SalesForecasting = ({
   currency,
   exchangeRate,
   role,
-  monthlyTargetPrices = {}, // Default to empty object if not provided
+  monthlyTargetPrices = {},
 }) => {
   const [sales, setSales] = useState([]);
   const [forecastData, setForecastData] = useState([]);
   const { language } = useContext(LanguageContext);
   const { selectedSeller } = useSeller();
   const currentMonth = new Date().getMonth();
+
+  useEffect(() => {
+    console.log(
+      "monthlyTargetPrices in SalesForecasting:",
+      monthlyTargetPrices
+    );
+  }, [monthlyTargetPrices]);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -170,9 +177,14 @@ const SalesForecasting = ({
 
   const handleExportExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      forecastData.map((data) => ({
+      forecastData.slice(0, 12).map((data, index) => ({
         Month: data.month,
         "Forecasted Sales": priceDisplay(data.sales),
+        Target: priceDisplay(
+          monthlyTargetPrices[index] !== undefined
+            ? monthlyTargetPrices[index]
+            : 13000000
+        ),
       }))
     );
     const workbook = XLSX.utils.book_new();
@@ -197,13 +209,15 @@ const SalesForecasting = ({
       },
       {
         label: "Target",
-        data: forecastData.slice(0, 12).map((_, index) =>
-          priceDisplay(
-            monthlyTargetPrices && typeof monthlyTargetPrices === "object"
-              ? monthlyTargetPrices[index] || 13000000
-              : 13000000
-          )
-        ),
+        data: Array(12)
+          .fill(0)
+          .map((_, index) =>
+            priceDisplay(
+              monthlyTargetPrices[index] !== undefined
+                ? monthlyTargetPrices[index]
+                : 13000000
+            )
+          ),
         backgroundColor: "rgba(94, 114, 228, 0.2)",
         borderColor: "#5e72e4",
         borderWidth: 1,
@@ -254,7 +268,9 @@ const SalesForecasting = ({
                 {forecastData.slice(0, 12).map((data, index) => (
                   <div
                     key={index}
-                    className={`forecast-item ${index < 11 ? "border-b" : ""} py-2`}
+                    className={`forecast-item ${
+                      index < 11 ? "border-b" : ""
+                    } py-2`}
                   >
                     <div className="flex justify-between">
                       <span className="text-[#1f2a44] font-medium">
@@ -271,8 +287,8 @@ const SalesForecasting = ({
                       Target:{" "}
                       <span className="font-bold">
                         {priceDisplay(
-                          monthlyTargetPrices && typeof monthlyTargetPrices === "object"
-                            ? monthlyTargetPrices[index] || 13000000
+                          monthlyTargetPrices[index] !== undefined
+                            ? monthlyTargetPrices[index]
                             : 13000000
                         )}{" "}
                         {currency}

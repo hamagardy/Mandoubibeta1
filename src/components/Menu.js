@@ -65,7 +65,7 @@ const Menu = ({ role, permissions }) => {
     if (isAdmin) {
       e.preventDefault();
       const password = prompt("Please enter the password:");
-      if (password === "Hama1122") {
+      if (password === "1") {
         setIsMenuOpen(false);
         navigate("/daily-sales");
       } else {

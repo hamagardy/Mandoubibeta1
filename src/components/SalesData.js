@@ -8,6 +8,7 @@ import {
   onSnapshot,
   updateDoc,
   doc,
+  deleteDoc, // Added for deleting sales
 } from "firebase/firestore";
 
 const SalesData = ({ currency, exchangeRate, role }) => {
@@ -106,12 +107,67 @@ const SalesData = ({ currency, exchangeRate, role }) => {
       bonus: Number(newBonus) || 0,
     };
 
+    // Recalculate totalPrice based on updated items
+    const newTotalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
     const saleRef = doc(db, "sales", saleId);
     try {
-      await updateDoc(saleRef, { items: updatedItems });
+      await updateDoc(saleRef, {
+        items: updatedItems,
+        totalPrice: newTotalPrice,
+      });
       // Sales state will update automatically via onSnapshot
     } catch (error) {
       console.error("Error updating bonus:", error);
+    }
+  };
+
+  // New function to handle quantity changes
+  const handleQuantityChange = async (saleId, itemIndex, newQuantity) => {
+    if (!checkPasswordTimeout("quantityEdit")) return;
+
+    const sale = sales.find((s) => s.id === saleId);
+    if (!sale || !Array.isArray(sale.items)) return;
+
+    const updatedItems = [...sale.items];
+    updatedItems[itemIndex] = {
+      ...updatedItems[itemIndex],
+      quantity: Number(newQuantity) || 1, // Ensure quantity is at least 1
+    };
+
+    // Recalculate totalPrice based on updated items
+    const newTotalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const saleRef = doc(db, "sales", saleId);
+    try {
+      await updateDoc(saleRef, {
+        items: updatedItems,
+        totalPrice: newTotalPrice,
+      });
+      // Sales state will update automatically via onSnapshot
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  // New function to handle sale deletion
+  const handleDeleteSale = async (saleId) => {
+    if (!checkPasswordTimeout("deleteSale")) return;
+
+    if (!window.confirm("Are you sure you want to delete this sale?")) return;
+
+    const saleRef = doc(db, "sales", saleId);
+    try {
+      await deleteDoc(saleRef);
+      // Sales state will update automatically via onSnapshot
+    } catch (error) {
+      console.error("Error deleting sale:", error);
     }
   };
 
@@ -187,7 +243,17 @@ const SalesData = ({ currency, exchangeRate, role }) => {
                         <td>
                           {priceDisplay(item.price)} {currency}
                         </td>
-                        <td>{item.quantity}</td>
+                        <td>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleQuantityChange(sale.id, i, e.target.value)
+                            }
+                            min="1"
+                            style={{ width: "60px", padding: "2px" }}
+                          />
+                        </td>
                         <td>
                           <input
                             type="number"
@@ -219,14 +285,48 @@ const SalesData = ({ currency, exchangeRate, role }) => {
               <p style={{ fontSize: "0.9rem", color: "#67748e" }}>
                 Date: {new Date(sale.date).toLocaleString()}
               </p>
-              <select
-                value={sale.status || "not-visited"}
-                onChange={(e) => handleStatusChange(sale.id, e.target.value)}
-                style={{ marginTop: "0.75rem" }}
+              {sale.note && (
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#67748e",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  Note: {sale.note}
+                </p>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "0.75rem",
+                }}
               >
-                <option value="not-visited">Not Visited</option>
-                <option value="visited">Visited</option>
-              </select>
+                <select
+                  value={sale.status || "not-visited"}
+                  onChange={(e) => handleStatusChange(sale.id, e.target.value)}
+                  style={{ marginTop: "0.75rem" }}
+                >
+                  <option value="not-visited">Not Visited</option>
+                  <option value="visited">Visited</option>
+                </select>
+                <button
+                  onClick={() => handleDeleteSale(sale.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#e74c3c",
+                    cursor: "pointer",
+                    fontSize: "1.2rem",
+                    marginTop: "0.75rem",
+                  }}
+                  title="Delete Sale"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
           ))
         ) : (

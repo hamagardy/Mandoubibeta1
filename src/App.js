@@ -53,18 +53,15 @@ const AppContent = ({
   const [hasRedirected, setHasRedirected] = React.useState(false);
 
   useEffect(() => {
-    // Reset hasRedirected when user changes to allow redirect on logout
     setHasRedirected(false);
   }, [user]);
 
   useEffect(() => {
     if (!hasRedirected) {
       if (user) {
-        // Redirect to Sales Summary after login
         navigate("/");
         setHasRedirected(true);
       } else {
-        // Redirect to login if no user (after logout)
         navigate("/login");
         setHasRedirected(true);
       }
@@ -100,7 +97,7 @@ const AppContent = ({
               <DailySalesEntry
                 currency={currency}
                 exchangeRate={exchangeRate}
-                selectedBrochureItems={selectedBrochureItems} // Pass to all users
+                selectedBrochureItems={selectedBrochureItems}
                 setSelectedBrochureItems={setSelectedBrochureItems}
               />
             }
@@ -153,6 +150,7 @@ const AppContent = ({
                 role={role}
                 currency={currency}
                 exchangeRate={exchangeRate}
+                monthlyTargetPrices={monthlyTargetPrices}
               />
             }
           />
@@ -211,12 +209,57 @@ function App() {
   const [loading, setLoading] = React.useState(true);
   const [selectedBrochureItems, setSelectedBrochureItems] = React.useState([]);
 
-  // Removed role-based clearing of selectedBrochureItems
-  // useEffect(() => {
-  //   if (role && role !== "admin") {
-  //     setSelectedBrochureItems([]);
-  //   }
-  // }, [role]);
+  // New function to show the update alert
+  const showUpdateAlert = () => {
+    if (!user) return; // Don't show alert if no user is logged in
+
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const alertCountKey = `${user.uid}_alertCount`;
+    const lastAlertDateKey = `${user.uid}_lastAlertDate`;
+
+    const lastAlertDate = localStorage.getItem(lastAlertDateKey);
+    let alertCount = Number(localStorage.getItem(alertCountKey)) || 0;
+
+    // Reset count if it's a new day
+    if (lastAlertDate !== today) {
+      alertCount = 0;
+      localStorage.setItem(lastAlertDateKey, today);
+      localStorage.setItem(alertCountKey, "0");
+    }
+
+    // Show alert if count is less than 2
+    if (alertCount < 2) {
+      alert(
+        "دواین گۆڕانکاری:\n" +
+          "1- ڕیزبەندی مەوادەکان بەپێی ناو\n" +
+          "2- گۆڕانکاری کردن لە ڕێژەی مەواد بۆ فاتورەکان\n" +
+          "3- سڕینەوەی فاتورەکان\n\n" +
+          "تێبینی: ئەو گۆڕانکاریانە کاریگەری لەسەر ڕێژەی تارگێت"
+      );
+      alertCount += 1;
+      localStorage.setItem(alertCountKey, alertCount.toString());
+    }
+  };
+
+  // New useEffect for alert logic
+  useEffect(() => {
+    if (user) {
+      // Show alert on user login or app load
+      showUpdateAlert();
+
+      // Check daily reset every minute
+      const interval = setInterval(() => {
+        const today = new Date().toISOString().split("T")[0];
+        const lastAlertDate = localStorage.getItem(`${user.uid}_lastAlertDate`);
+        if (lastAlertDate !== today) {
+          localStorage.setItem(`${user.uid}_alertCount`, "0");
+          localStorage.setItem(`${user.uid}_lastAlertDate`, today);
+        }
+      }, 60 * 1000); // 1 minute
+
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
@@ -255,7 +298,14 @@ function App() {
                       }
                     : userData.permissions || {}
                 );
+                // Ensure monthlyTargetPrices is always set from Firestore
                 setMonthlyTargetPrices(userData.monthlyTargetPrices || {});
+                console.log(
+                  "Fetched monthlyTargetPrices for user",
+                  currentUser.uid,
+                  ":",
+                  userData.monthlyTargetPrices || {}
+                );
               } else {
                 const defaultRole =
                   currentUser.uid === "qBnUF4aOaYPxHP2VlDdQOq2sEKl2"
@@ -274,6 +324,7 @@ function App() {
                   pharmaLocations: true,
                   brochure: true,
                 };
+                const initialTargets = {}; // Empty initially, updated by admin
                 setRole(defaultRole);
                 setPermissions(
                   defaultRole === "admin"
@@ -296,8 +347,9 @@ function App() {
                   email: currentUser.email,
                   role: defaultRole,
                   permissions: defaultPermissions,
-                  monthlyTargetPrices: {},
+                  monthlyTargetPrices: initialTargets,
                 });
+                setMonthlyTargetPrices(initialTargets);
               }
               setLoading(false);
             },
@@ -350,21 +402,31 @@ function App() {
     if (user) {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { monthlyTargetPrices: updatedTargets });
+      console.log(
+        "Admin updated monthlyTargetPrices for user",
+        user.uid,
+        ":",
+        updatedTargets
+      );
 
       if (role === "admin") {
         const usersRef = collection(db, "users");
         const snapshot = await getDocs(usersRef);
         await Promise.all(
-          snapshot.docs
-            .filter((doc) => doc.id !== user.uid)
-            .map((doc) =>
-              updateDoc(doc.ref, {
-                monthlyTargetPrices: {
-                  ...doc.data().monthlyTargetPrices,
-                  [month]: numericTarget,
-                },
-              })
-            )
+          snapshot.docs.map((docSnap) => {
+            const docRef = doc(db, "users", docSnap.id);
+            const currentTargets = docSnap.data().monthlyTargetPrices || {};
+            return updateDoc(docRef, {
+              monthlyTargetPrices: {
+                ...currentTargets,
+                [month]: numericTarget,
+              },
+            });
+          })
+        );
+        console.log(
+          "Admin propagated monthlyTargetPrices to all users:",
+          updatedTargets
         );
       }
     }
