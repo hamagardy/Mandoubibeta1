@@ -209,7 +209,6 @@ function App() {
   const [loading, setLoading] = React.useState(true);
   const [selectedBrochureItems, setSelectedBrochureItems] = React.useState([]);
 
-<<<<<<< HEAD
   // New function to show the update alert
   const showUpdateAlert = () => {
     if (!user) return; // Don't show alert if no user is logged in
@@ -262,8 +261,6 @@ function App() {
     }
   }, [user]);
 
-=======
->>>>>>> 4dc29a2c0dadbc05328be6871c2fa931e0f67a05
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
       if (loading) {
