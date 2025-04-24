@@ -1,3 +1,4 @@
+// Settings.js (unchanged except for logging)
 import React, { useState, useContext } from "react";
 import { LanguageContext } from "./LanguageContext";
 
@@ -67,6 +68,12 @@ const Settings = ({
       return;
     await updateTargetPrice(numericTargetPrice, currentMonth);
     setLocalTargetPrice(numericTargetPrice);
+    console.log(
+      "Settings: Updated target for month",
+      currentMonth,
+      "to",
+      numericTargetPrice
+    ); // Debug log
     alert("Target price updated successfully for the current month!");
   };
 
