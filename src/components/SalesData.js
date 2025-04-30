@@ -8,8 +8,10 @@ import {
   onSnapshot,
   updateDoc,
   doc,
-  deleteDoc, // Added for deleting sales
+  deleteDoc,
 } from "firebase/firestore";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 const SalesData = ({ currency, exchangeRate, role }) => {
   const [sales, setSales] = useState([]);
@@ -18,6 +20,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const { selectedSeller } = useSeller();
+  const [exportLoading, setExportLoading] = useState({}); // New: Track loading state per sale
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -64,17 +67,19 @@ const SalesData = ({ currency, exchangeRate, role }) => {
     const key = `${currentUser.uid}_${type}_lastPasswordTime`;
     const lastPasswordTime = localStorage.getItem(key);
     const currentTime = Date.now();
-    const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    const timeout =
+      type === "priceChange" ? 3 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
 
     if (
       lastPasswordTime &&
-      currentTime - parseInt(lastPasswordTime) < twoHoursInMs
+      currentTime - parseInt(lastPasswordTime) < timeout
     ) {
-      return true; // Password still valid
+      return true;
     }
 
+    const expectedPassword = type === "priceChange" ? "dashty" : "yaseen";
     const password = prompt(`Please enter the password for ${type}:`);
-    if (password === "yaseen") {
+    if (password === expectedPassword) {
       localStorage.setItem(key, currentTime.toString());
       return true;
     } else {
@@ -107,7 +112,6 @@ const SalesData = ({ currency, exchangeRate, role }) => {
       bonus: Number(newBonus) || 0,
     };
 
-    // Recalculate totalPrice based on updated items
     const newTotalPrice = updatedItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -119,13 +123,11 @@ const SalesData = ({ currency, exchangeRate, role }) => {
         items: updatedItems,
         totalPrice: newTotalPrice,
       });
-      // Sales state will update automatically via onSnapshot
     } catch (error) {
       console.error("Error updating bonus:", error);
     }
   };
 
-  // New function to handle quantity changes
   const handleQuantityChange = async (saleId, itemIndex, newQuantity) => {
     if (!checkPasswordTimeout("quantityEdit")) return;
 
@@ -135,10 +137,9 @@ const SalesData = ({ currency, exchangeRate, role }) => {
     const updatedItems = [...sale.items];
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
-      quantity: Number(newQuantity) || 1, // Ensure quantity is at least 1
+      quantity: Number(newQuantity) || 1,
     };
 
-    // Recalculate totalPrice based on updated items
     const newTotalPrice = updatedItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -150,13 +151,39 @@ const SalesData = ({ currency, exchangeRate, role }) => {
         items: updatedItems,
         totalPrice: newTotalPrice,
       });
-      // Sales state will update automatically via onSnapshot
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
   };
 
-  // New function to handle sale deletion
+  const handlePriceChange = async (saleId, itemIndex, newPrice) => {
+    if (!checkPasswordTimeout("priceChange")) return;
+
+    const sale = sales.find((s) => s.id === saleId);
+    if (!sale || !Array.isArray(sale.items)) return;
+
+    const updatedItems = [...sale.items];
+    updatedItems[itemIndex] = {
+      ...updatedItems[itemIndex],
+      price: Number(newPrice) || 0,
+    };
+
+    const newTotalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const saleRef = doc(db, "sales", saleId);
+    try {
+      await updateDoc(saleRef, {
+        items: updatedItems,
+        totalPrice: newTotalPrice,
+      });
+    } catch (error) {
+      console.error("Error updating price:", error);
+    }
+  };
+
   const handleDeleteSale = async (saleId) => {
     if (!checkPasswordTimeout("deleteSale")) return;
 
@@ -165,9 +192,54 @@ const SalesData = ({ currency, exchangeRate, role }) => {
     const saleRef = doc(db, "sales", saleId);
     try {
       await deleteDoc(saleRef);
-      // Sales state will update automatically via onSnapshot
     } catch (error) {
       console.error("Error deleting sale:", error);
+    }
+  };
+
+  const handleExportSalePDF = async (saleId) => {
+    setExportLoading((prev) => ({ ...prev, [saleId]: true }));
+    const saleElement = document.getElementById(`sale-card-${saleId}`);
+    if (!saleElement) {
+      console.error("Sale card not found");
+      setExportLoading((prev) => ({ ...prev, [saleId]: false }));
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(saleElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+      const imgWidth = canvasWidth * ratio;
+      const imgHeight = canvasHeight * ratio;
+
+      pdf.addImage(
+        imgData,
+        "PNG",
+        (pdfWidth - imgWidth) / 2,
+        10,
+        imgWidth,
+        imgHeight
+      );
+
+      const sale = sales.find((s) => s.id === saleId);
+      const fileName = `sale_${sale.customerName}_${
+        new Date(sale.date).toISOString().split("T")[0]
+      }.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+    } finally {
+      setExportLoading((prev) => ({ ...prev, [saleId]: false }));
     }
   };
 
@@ -178,16 +250,21 @@ const SalesData = ({ currency, exchangeRate, role }) => {
       >
         Sales Data
       </h2>
-      <div className="filters">
+      <div
+        className="filters"
+        style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}
+      >
         <input
           type="text"
           placeholder="Search by customer name"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
         />
         <select
           value={selectedDay}
           onChange={(e) => setSelectedDay(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
         >
           <option value="">All Days</option>
           {[...Array(31)].map((_, i) => (
@@ -197,6 +274,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
         >
           <option value="">All Months</option>
           {[...Array(12)].map((_, i) => (
@@ -206,6 +284,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
         >
           <option value="">All Years</option>
           {[...Array(5)].map((_, i) => (
@@ -218,32 +297,54 @@ const SalesData = ({ currency, exchangeRate, role }) => {
       <div className="sales-data-container">
         {filteredSales.length > 0 ? (
           filteredSales.map((sale) => (
-            <div key={sale.id} className="sales-data-card">
+            <div
+              key={sale.id}
+              id={`sale-card-${sale.id}`}
+              className="sales-data-card"
+              style={{
+                marginBottom: "1rem",
+                padding: "1rem",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+              }}
+            >
               <div
                 className={`status-circle ${
                   sale.status === "visited" ? "visited" : "not-visited"
                 }`}
               ></div>
-              <h3>{sale.customerName}</h3>
-              <table>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+                {sale.customerName}
+              </h3>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Bonus</th>
-                    <th>Total</th>
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <th style={{ padding: "8px" }}>Item</th>
+                    <th style={{ padding: "8px" }}>Price</th>
+                    <th style={{ padding: "8px" }}>Quantity</th>
+                    <th style={{ padding: "8px" }}>Bonus</th>
+                    <th style={{ padding: "8px" }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.isArray(sale.items) &&
                     sale.items.map((item, i) => (
                       <tr key={i}>
-                        <td>{item.name}</td>
-                        <td>
-                          {priceDisplay(item.price)} {currency}
+                        <td style={{ padding: "8px" }}>{item.name}</td>
+                        <td style={{ padding: "8px" }}>
+                          <input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) =>
+                              handlePriceChange(sale.id, i, e.target.value)
+                            }
+                            min="0"
+                            step="0.01"
+                            style={{ width: "80px", padding: "2px" }}
+                          />
+                          {` ${currency}`}
                         </td>
-                        <td>
+                        <td style={{ padding: "8px" }}>
                           <input
                             type="number"
                             value={item.quantity}
@@ -254,7 +355,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
                             style={{ width: "60px", padding: "2px" }}
                           />
                         </td>
-                        <td>
+                        <td style={{ padding: "8px" }}>
                           <input
                             type="number"
                             value={item.bonus || 0}
@@ -264,7 +365,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
                             style={{ width: "60px", padding: "2px" }}
                           />
                         </td>
-                        <td>
+                        <td style={{ padding: "8px" }}>
                           {priceDisplay(item.quantity * item.price)} {currency}
                         </td>
                       </tr>
@@ -307,7 +408,7 @@ const SalesData = ({ currency, exchangeRate, role }) => {
                 <select
                   value={sale.status || "not-visited"}
                   onChange={(e) => handleStatusChange(sale.id, e.target.value)}
-                  style={{ marginTop: "0.75rem" }}
+                  style={{ padding: "4px", borderRadius: "4px" }}
                 >
                   <option value="not-visited">Not Visited</option>
                   <option value="visited">Visited</option>
@@ -320,11 +421,26 @@ const SalesData = ({ currency, exchangeRate, role }) => {
                     color: "#e74c3c",
                     cursor: "pointer",
                     fontSize: "1.2rem",
-                    marginTop: "0.75rem",
                   }}
                   title="Delete Sale"
                 >
                   🗑️
+                </button>
+                <button
+                  onClick={() => handleExportSalePDF(sale.id)}
+                  disabled={exportLoading[sale.id]}
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: exportLoading[sale.id]
+                      ? "#ccc"
+                      : "#3498db",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: exportLoading[sale.id] ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {exportLoading[sale.id] ? "Exporting..." : "Export as PDF"}
                 </button>
               </div>
             </div>
