@@ -215,6 +215,7 @@ const SalesReports = ({ currency, exchangeRate, role }) => {
       <div className="ios-grid ios-grid-1">
         {filteredSales.length > 0 ? (
           filteredSales.map((sale) => (
+<<<<<<< HEAD
             <div key={sale.id} className="ios-card">
               <h3 style={{
                 fontSize: "1.25rem",
@@ -261,6 +262,44 @@ const SalesReports = ({ currency, exchangeRate, role }) => {
                   </tbody>
                 </table>
               </div>
+=======
+            <div key={sale.id} className="sales-report-card">
+              <h3>{sale.customerName}</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Total</td>
+                    <td>
+                      {priceDisplay(sale.totalPrice)} {currency}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Date</td>
+                    <td>{new Date(sale.date).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td>Items</td>
+                    <td>
+                      {sale.items
+                        .map((item) => `${item.name} (x${item.quantity})`)
+                        .join(", ")}
+                    </td>
+                  </tr>
+                  {sale.note && (
+                    <tr>
+                      <td>Note</td>
+                      <td>{sale.note}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
             </div>
           ))
         ) : (

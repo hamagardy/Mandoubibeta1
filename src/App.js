@@ -213,6 +213,60 @@ function App() {
   const [loading, setLoading] = React.useState(true);
   const [selectedBrochureItems, setSelectedBrochureItems] = React.useState([]);
 
+<<<<<<< HEAD
+=======
+  // New function to show the update alert
+  const showUpdateAlert = () => {
+    if (!user) return; // Don't show alert if no user is logged in
+
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const alertCountKey = `${user.uid}_alertCount`;
+    const lastAlertDateKey = `${user.uid}_lastAlertDate`;
+
+    const lastAlertDate = localStorage.getItem(lastAlertDateKey);
+    let alertCount = Number(localStorage.getItem(alertCountKey)) || 0;
+
+    // Reset count if it's a new day
+    if (lastAlertDate !== today) {
+      alertCount = 0;
+      localStorage.setItem(lastAlertDateKey, today);
+      localStorage.setItem(alertCountKey, "0");
+    }
+
+    // Show alert if count is less than 2
+    if (alertCount < 2) {
+      alert(
+        "دواین گۆڕانکاری:\n" +
+        "1- زەخیرەکردنی فاتورەکان بە شێوەی PDF\n" +
+        "2- گۆڕینی نرخی مەواد لە فاتورەکان\n" +
+        "تێبینی: ئەم گۆڕانکارییە کاریگەریی هەیە لەسەر ڕێژەی تارگێت"
+      );
+      alertCount += 1;
+      localStorage.setItem(alertCountKey, alertCount.toString());
+    }
+  };
+
+  // New useEffect for alert logic
+  useEffect(() => {
+    if (user) {
+      // Show alert on user login or app load
+      showUpdateAlert();
+
+      // Check daily reset every minute
+      const interval = setInterval(() => {
+        const today = new Date().toISOString().split("T")[0];
+        const lastAlertDate = localStorage.getItem(`${user.uid}_lastAlertDate`);
+        if (lastAlertDate !== today) {
+          localStorage.setItem(`${user.uid}_alertCount`, "0");
+          localStorage.setItem(`${user.uid}_lastAlertDate`, today);
+        }
+      }, 60 * 1000); // 1 minute
+
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
       if (loading) {

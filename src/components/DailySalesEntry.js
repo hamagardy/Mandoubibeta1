@@ -434,10 +434,115 @@ const DailySalesEntry = ({
               boxShadow: "0 4px 16px rgba(16, 185, 129, 0.3)"
             }}
           >
+<<<<<<< HEAD
             {translations[language].saveSale}
           </button>
         </form>
       </div>
+=======
+            <option value="">{translations[language].selectItem}</option>
+            {items
+              .slice() // Create a copy to avoid mutating the original array
+              .sort((a, b) => a.name.localeCompare(b.name)) // Sort by name
+              .map((item) => (
+                <option key={item.id} value={JSON.stringify(item)}>
+                  {item.name} - {priceDisplay(item.price)} {currency}{" "}
+                  {item.verified
+                    ? `(${translations[language].verified})`
+                    : `(${translations[language].notVerified})`}
+                </option>
+              ))}
+          </select>
+        </div>
+        <ul className="mb-4 sale-items-list">
+          {saleItems.map((item) => (
+            <li
+              key={item.id}
+              className="sale-item flex items-center justify-between p-2 border-b"
+            >
+              <div className="flex items-center">
+                <span className="font-medium mr-2">{item.name}</span>
+                <span
+                  className={`text-sm px-2 py-1 rounded ${
+                    item.verified
+                      ? "bg-green-200 text-green-800"
+                      : "bg-red-200 text-red-800"
+                  }`}
+                >
+                  {item.verified
+                    ? translations[language].verified
+                    : translations[language].notVerified}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => updateQuantity(item.id, e.target.value)}
+                  min="1"
+                  className="quantity-input w-16"
+                />
+                <span>
+                  x {priceDisplay(item.price)} ={" "}
+                  {priceDisplay(item.quantity * item.price)} {currency}
+                </span>
+                <label className="bonus-label">
+                  Bonus:
+                  <input
+                    type="number"
+                    value={item.bonus || ""}
+                    onChange={(e) => updateBonus(item.id, e.target.value)}
+                    min="0"
+                    step="0.01"
+                    className="bonus-input w-16"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeItemFromSale(item.id)}
+                  className="remove-btn text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mb-4 text-lg font-semibold">
+          {translations[language].total}: {totalDisplay()} {currency}
+        </p>
+        <div className="mb-4">
+          <label className="block mb-2 font-medium">
+            {translations[language].saleDate}
+          </label>
+          <input
+            type="date"
+            value={saleDate}
+            onChange={(e) => setSaleDate(e.target.value)}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block mb-2 font-medium">
+            {translations[language].note}
+          </label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={translations[language].note}
+            rows="3"
+          />
+          {selectedBrochureItems.length > 0 && (
+            <p className="brochure-note mt-2 text-sm text-[#67748e]">
+              <strong>Brochure Items:</strong>{" "}
+              {selectedBrochureItems.map((item) => item.name).join(", ")}
+            </p>
+          )}
+        </div>
+        <button type="submit" className="w-full">
+          {translations[language].saveSale}
+        </button>
+      </form>
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
     </div>
   );
 };

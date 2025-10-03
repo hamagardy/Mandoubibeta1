@@ -112,9 +112,24 @@ const Menu = ({ role, permissions }) => {
   };
 
   const handleDailySalesClick = (e) => {
+<<<<<<< HEAD
     // Remove password protection - allow direct access
     setIsMenuOpen(false);
     navigate("/daily-sales");
+=======
+    if (isAdmin) {
+      e.preventDefault();
+      const password = prompt("Please enter the password:");
+      if (password === "1") {
+        setIsMenuOpen(false);
+        navigate("/daily-sales");
+      } else {
+        alert("Incorrect password!");
+      }
+    } else {
+      setIsMenuOpen(false);
+    }
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
   };
 
   const menuItems = [

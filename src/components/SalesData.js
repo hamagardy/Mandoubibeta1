@@ -9,7 +9,10 @@ import {
   updateDoc,
   doc,
   deleteDoc,
+<<<<<<< HEAD
   getDocs,
+=======
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 } from "firebase/firestore";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -25,6 +28,7 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
   const [selectedYear, setSelectedYear] = useState("");
   const { selectedSeller } = useSeller();
   const [exportLoading, setExportLoading] = useState({}); // New: Track loading state per sale
+<<<<<<< HEAD
 
   // Fetch users if user has permission to view all sales data
   useEffect(() => {
@@ -45,6 +49,8 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
       fetchUsers();
     }
   }, [permissions, role]);
+=======
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -109,6 +115,7 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
     return user ? (user.name || user.email) : "Unknown User";
   };
 
+<<<<<<< HEAD
   const checkAdminAccess = () => {
     return role === "admin";
   };
@@ -127,6 +134,30 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
 
   const checkChangeBonusPermission = () => {
     return permissions?.changeBonus || false;
+=======
+    const key = `${currentUser.uid}_${type}_lastPasswordTime`;
+    const lastPasswordTime = localStorage.getItem(key);
+    const currentTime = Date.now();
+    const timeout =
+      type === "priceChange" ? 3 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
+
+    if (
+      lastPasswordTime &&
+      currentTime - parseInt(lastPasswordTime) < timeout
+    ) {
+      return true;
+    }
+
+    const expectedPassword = type === "priceChange" ? "dashty" : "yaseen";
+    const password = prompt(`Please enter the password for ${type}:`);
+    if (password === expectedPassword) {
+      localStorage.setItem(key, currentTime.toString());
+      return true;
+    } else {
+      alert("Incorrect password!");
+      return false;
+    }
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
   };
 
   const handleStatusChange = async (saleId, status) => {
@@ -170,7 +201,11 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
   };
 
   const handleQuantityChange = async (saleId, itemIndex, newQuantity) => {
+<<<<<<< HEAD
     if (!checkChangePricePermission()) return;
+=======
+    if (!checkPasswordTimeout("quantityEdit")) return;
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 
     const sale = sales.find((s) => s.id === saleId);
     if (!sale || !Array.isArray(sale.items)) return;
@@ -198,7 +233,11 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
   };
 
   const handlePriceChange = async (saleId, itemIndex, newPrice) => {
+<<<<<<< HEAD
     if (!checkChangePricePermission()) return;
+=======
+    if (!checkPasswordTimeout("priceChange")) return;
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 
     const sale = sales.find((s) => s.id === saleId);
     if (!sale || !Array.isArray(sale.items)) return;
@@ -226,7 +265,11 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
   };
 
   const handleDeleteSale = async (saleId) => {
+<<<<<<< HEAD
     if (!checkAdminAccess()) return;
+=======
+    if (!checkPasswordTimeout("deleteSale")) return;
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 
     if (!window.confirm("Are you sure you want to delete this sale?")) return;
 
@@ -286,6 +329,7 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
 
   return (
     <div className="container">
+<<<<<<< HEAD
       <div className="ios-glassy-container">
         <h2 style={{
           fontSize: "1.75rem",
@@ -365,6 +409,56 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
             ))}
           </select>
         </div>
+=======
+      <h2
+        style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem" }}
+      >
+        Sales Data
+      </h2>
+      <div
+        className="filters"
+        style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}
+      >
+        <input
+          type="text"
+          placeholder="Search by customer name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
+        />
+        <select
+          value={selectedDay}
+          onChange={(e) => setSelectedDay(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
+        >
+          <option value="">All Days</option>
+          {[...Array(31)].map((_, i) => (
+            <option key={i + 1} value={i + 1}>{`Day ${i + 1}`}</option>
+          ))}
+        </select>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
+        >
+          <option value="">All Months</option>
+          {[...Array(12)].map((_, i) => (
+            <option key={i + 1} value={i + 1}>{`Month ${i + 1}`}</option>
+          ))}
+        </select>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px" }}
+        >
+          <option value="">All Years</option>
+          {[...Array(5)].map((_, i) => (
+            <option key={i} value={new Date().getFullYear() - 2 + i}>
+              {new Date().getFullYear() - 2 + i}
+            </option>
+          ))}
+        </select>
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
       </div>
       
       <div className="ios-grid ios-grid-1">
@@ -373,14 +467,25 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
             <div
               key={sale.id}
               id={`sale-card-${sale.id}`}
+<<<<<<< HEAD
               className="ios-card"
               style={{ position: "relative" }}
+=======
+              className="sales-data-card"
+              style={{
+                marginBottom: "1rem",
+                padding: "1rem",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+              }}
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
             >
               <div
                 className={`ios-status-circle ${
                   sale.status === "visited" ? "visited" : "not-visited"
                 }`}
               ></div>
+<<<<<<< HEAD
               
               <h3 style={{
                 fontSize: "1.25rem",
@@ -575,6 +680,137 @@ const SalesData = ({ currency, exchangeRate, role, permissions }) => {
                     {exportLoading[sale.id] ? "Exporting..." : "Export PDF"}
                   </button>
                 </div>
+=======
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+                {sale.customerName}
+              </h3>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <th style={{ padding: "8px" }}>Item</th>
+                    <th style={{ padding: "8px" }}>Price</th>
+                    <th style={{ padding: "8px" }}>Quantity</th>
+                    <th style={{ padding: "8px" }}>Bonus</th>
+                    <th style={{ padding: "8px" }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(sale.items) &&
+                    sale.items.map((item, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: "8px" }}>{item.name}</td>
+                        <td style={{ padding: "8px" }}>
+                          <input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) =>
+                              handlePriceChange(sale.id, i, e.target.value)
+                            }
+                            min="0"
+                            step="0.01"
+                            style={{ width: "80px", padding: "2px" }}
+                          />
+                          {` ${currency}`}
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleQuantityChange(sale.id, i, e.target.value)
+                            }
+                            min="1"
+                            style={{ width: "60px", padding: "2px" }}
+                          />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input
+                            type="number"
+                            value={item.bonus || 0}
+                            onChange={(e) =>
+                              handleBonusChange(sale.id, i, e.target.value)
+                            }
+                            style={{ width: "60px", padding: "2px" }}
+                          />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          {priceDisplay(item.quantity * item.price)} {currency}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              <p style={{ marginTop: "0.75rem", fontWeight: 600 }}>
+                Total:{" "}
+                {priceDisplay(
+                  sale.totalPrice ||
+                    sale.items.reduce(
+                      (sum, item) => sum + item.price * item.quantity,
+                      0
+                    )
+                )}{" "}
+                {currency}
+              </p>
+              <p style={{ fontSize: "0.9rem", color: "#67748e" }}>
+                Date: {new Date(sale.date).toLocaleString()}
+              </p>
+              {sale.note && (
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#67748e",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  Note: {sale.note}
+                </p>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "0.75rem",
+                }}
+              >
+                <select
+                  value={sale.status || "not-visited"}
+                  onChange={(e) => handleStatusChange(sale.id, e.target.value)}
+                  style={{ padding: "4px", borderRadius: "4px" }}
+                >
+                  <option value="not-visited">Not Visited</option>
+                  <option value="visited">Visited</option>
+                </select>
+                <button
+                  onClick={() => handleDeleteSale(sale.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#e74c3c",
+                    cursor: "pointer",
+                    fontSize: "1.2rem",
+                  }}
+                  title="Delete Sale"
+                >
+                  🗑️
+                </button>
+                <button
+                  onClick={() => handleExportSalePDF(sale.id)}
+                  disabled={exportLoading[sale.id]}
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: exportLoading[sale.id]
+                      ? "#ccc"
+                      : "#3498db",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: exportLoading[sale.id] ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {exportLoading[sale.id] ? "Exporting..." : "Export as PDF"}
+                </button>
+>>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
               </div>
             </div>
           ))
