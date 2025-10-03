@@ -8,14 +8,7 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
-<<<<<<< HEAD
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-=======
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
 
 const AdminMembersList = () => {
   const [members, setMembers] = useState([]);
@@ -64,15 +57,12 @@ const AdminMembersList = () => {
         followUp: newMemberRole === "admin",
         pharmaLocations: true,
         brochure: true,
-<<<<<<< HEAD
         // New permission fields - regular users start with false, admin gets true
         viewAllSalesData: newMemberRole === "admin",
         changeVisitStatus: false, // Regular users can be granted this
         changePermissions: newMemberRole === "admin",
         changePrice: false, // Regular users can be granted this
         changeBonus: false, // Regular users can be granted this
-=======
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
       };
 
       const newMemberData = {
@@ -88,15 +78,12 @@ const AdminMembersList = () => {
                 adminMembers: true,
                 followUp: true,
                 brochure: true,
-<<<<<<< HEAD
                 // Admin gets all new permissions
                 viewAllSalesData: true,
                 changeVisitStatus: true,
                 changePermissions: true,
                 changePrice: true,
                 changeBonus: true,
-=======
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
               }
             : defaultPermissions,
         monthlyTargetPrices: {},
@@ -179,11 +166,7 @@ const AdminMembersList = () => {
     };
 
     try {
-<<<<<<< HEAD
       await updateDoc(memberRef, updatedData);
-=======
-      await setDoc(memberRef, updatedData, { merge: true });
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
       setMembers(
         members.map((m) =>
           m.id === editingMember.id ? { ...m, ...updatedData } : m
@@ -191,10 +174,7 @@ const AdminMembersList = () => {
       );
       setEditingMember(null);
       setEditPassword("");
-<<<<<<< HEAD
       alert("Permissions updated successfully!");
-=======
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
     } catch (error) {
       console.error("Error saving permissions:", error);
       setError(error.message);
@@ -338,14 +318,9 @@ const AdminMembersList = () => {
             Add Member
           </button>
         </div>
-<<<<<<< HEAD
         
         {/* Members List */}
         <div className="ios-grid ios-grid-1">
-=======
-        {error && <p className="text-red-500">{error}</p>}
-        <ul className="space-y-4">
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
           {members.map((member) => (
             <div key={member.id} className="ios-card">
               <div style={{
@@ -451,7 +426,6 @@ const AdminMembersList = () => {
             }}>
               Edit {editingMember.name || editingMember.email}
             </h3>
-<<<<<<< HEAD
             
             <div className="ios-form-group">
               <label className="ios-label">Name</label>
@@ -464,39 +438,6 @@ const AdminMembersList = () => {
                   setEditingMember({ ...editingMember, name: e.target.value })
                 }
               />
-=======
-            <input
-              type="text"
-              placeholder="Update name"
-              value={editingMember.name || ""}
-              onChange={(e) =>
-                setEditingMember({ ...editingMember, name: e.target.value })
-              }
-              className="input-field mb-3"
-            />
-            <input
-              type="password"
-              placeholder="Update password (optional)"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              className="input-field mb-3"
-            />
-            <div className="space-y-3">
-              {Object.keys(menuPermissions).map((key) => (
-                <div key={key} className="toggle-container">
-                  <span className="toggle-label">{menuPermissions[key]}</span>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={permissions[key] || false}
-                      onChange={() => togglePermission(key)}
-                      disabled={editingMember.role === "admin"}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              ))}
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
             </div>
             
             <div className="ios-form-group">

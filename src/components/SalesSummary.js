@@ -373,7 +373,6 @@ const SalesSummary = ({
   ];
   const COLORS = ["#3C50E0", "#e74c3c"];
 
-<<<<<<< HEAD
   // Dashboard Analytics Functions
   const priceDisplay = (price) =>
     currency === "USD" ? (price / exchangeRate).toFixed(2) : Math.round(price);
@@ -580,8 +579,6 @@ const SalesSummary = ({
   const dashboardAnalytics = calculateDashboardAnalytics();
   const memberProgress = calculateMemberProgress();
 
-=======
->>>>>>> de271b5dddd66c8aa3964b6508d3b44445aa4da7
   // Updated dailySales to match the same month as totalSales
   const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Baghdad" });
   const currentMonthIndex = new Date(now).getMonth();
