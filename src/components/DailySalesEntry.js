@@ -179,144 +179,265 @@ const DailySalesEntry = ({
 
   return (
     <div className="container">
-      <form onSubmit={handleSubmit} className="card">
-        <h2 className="text-xl font-semibold mb-6">
+      <div className="ios-glassy-container">
+        <h2 style={{
+          fontSize: "1.5rem",
+          fontWeight: "700",
+          marginBottom: "1.5rem",
+          color: "var(--dark)",
+          textAlign: "center"
+        }}>
           {translations[language].saveSale}
         </h2>
-        <div className="relative mb-4">
-          <label className="block mb-2 font-medium">
-            {translations[language].customerName}
-          </label>
-          <input
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder={translations[language].customerName}
-            required
-          />
-          {showSuggestions && (
-            <div className="absolute mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-              {filteredCustomers.map((customer, index) => (
-                <div
-                  key={index}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleCustomerSelect(customer)}
-                >
-                  {customer}
+        
+        <form onSubmit={handleSubmit} className="ios-grid ios-grid-1">
+          <div className="ios-form-group">
+            <label className="ios-label">
+              {translations[language].customerName}
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                className="ios-input"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder={translations[language].customerName}
+                required
+              />
+              {showSuggestions && filteredCustomers.length > 0 && (
+                <div style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  background: "rgba(255, 255, 255, 0.95)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  borderRadius: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  zIndex: 1000,
+                  maxHeight: "200px",
+                  overflowY: "auto"
+                }}>
+                  {filteredCustomers.map((customer, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleCustomerSelect(customer)}
+                      style={{
+                        padding: "0.75rem 1rem",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        borderBottom: index < filteredCustomers.length - 1 ? "1px solid rgba(0, 0, 0, 0.05)" : "none"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = "rgba(60, 80, 224, 0.05)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = "transparent";
+                      }}
+                    >
+                      {customer}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+            </div>
+          </div>
+
+          <div className="ios-form-group">
+            <label className="ios-label">
+              {translations[language].selectItem}
+            </label>
+            <select
+              className="ios-select"
+              onChange={(e) =>
+                e.target.value && addItemToSale(JSON.parse(e.target.value))
+              }
+              value={selectedItem ? JSON.stringify(selectedItem) : ""}
+            >
+              <option value="">{translations[language].selectItem}</option>
+              {items
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((item) => (
+                  <option key={item.id} value={JSON.stringify(item)}>
+                    {item.name} - {priceDisplay(item.price)} {currency}{" "}
+                    {item.verified
+                      ? `(${translations[language].verified})`
+                      : `(${translations[language].notVerified})`}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {saleItems.length > 0 && (
+            <div className="ios-form-group">
+              <label className="ios-label">Selected Items</label>
+              <div className="ios-grid ios-grid-1" style={{ gap: "1rem" }}>
+                {saleItems.map((item) => (
+                  <div key={item.id} className="ios-card">
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: "1rem"
+                    }}>
+                      <div>
+                        <div style={{
+                          fontWeight: "600",
+                          color: "var(--dark)",
+                          marginBottom: "0.25rem"
+                        }}>
+                          {item.name}
+                        </div>
+                        <span style={{
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                          borderRadius: "8px",
+                          background: item.verified
+                            ? "rgba(33, 150, 83, 0.1)"
+                            : "rgba(211, 64, 83, 0.1)",
+                          color: item.verified
+                            ? "var(--success)"
+                            : "var(--danger)"
+                        }}>
+                          {item.verified
+                            ? translations[language].verified
+                            : translations[language].notVerified}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeItemFromSale(item.id)}
+                        className="ios-button ios-button-danger"
+                        style={{
+                          padding: "0.5rem",
+                          fontSize: "0.875rem",
+                          minWidth: "auto",
+                          background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                          color: "white",
+                          border: "none",
+                          boxShadow: "0 4px 16px rgba(220, 38, 38, 0.3)"
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    
+                    <div className="ios-input-group">
+                      <div style={{ flex: 1 }}>
+                        <label className="ios-label" style={{ marginBottom: "0.25rem" }}>
+                          Quantity
+                        </label>
+                        <input
+                          className="ios-input ios-input-small"
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => updateQuantity(item.id, e.target.value)}
+                          min="1"
+                        />
+                      </div>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.9rem",
+                        color: "var(--body)"
+                      }}>
+                        x {priceDisplay(item.price)} = {priceDisplay(item.quantity * item.price)} {currency}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label className="ios-label" style={{ marginBottom: "0.25rem" }}>
+                          Bonus
+                        </label>
+                        <input
+                          className="ios-input ios-input-small"
+                          type="number"
+                          value={item.bonus || ""}
+                          onChange={(e) => updateBonus(item.id, e.target.value)}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">
-            {translations[language].selectItem}
-          </label>
-          <select
-            onChange={(e) =>
-              e.target.value && addItemToSale(JSON.parse(e.target.value))
-            }
-            value={selectedItem ? JSON.stringify(selectedItem) : ""}
+
+          <div className="ios-card" style={{
+            background: "rgba(60, 80, 224, 0.05)",
+            border: "1px solid rgba(60, 80, 224, 0.1)"
+          }}>
+            <div style={{
+              fontSize: "1.25rem",
+              fontWeight: "700",
+              color: "var(--primary)",
+              textAlign: "center"
+            }}>
+              {translations[language].total}: {totalDisplay()} {currency}
+            </div>
+          </div>
+
+          <div className="ios-form-group">
+            <label className="ios-label">
+              {translations[language].saleDate}
+            </label>
+            <input
+              className="ios-input"
+              type="date"
+              value={saleDate}
+              onChange={(e) => setSaleDate(e.target.value)}
+            />
+          </div>
+
+          <div className="ios-form-group">
+            <label className="ios-label">
+              {translations[language].note}
+            </label>
+            <textarea
+              className="ios-textarea"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={translations[language].note}
+              rows="3"
+              style={{ resize: "vertical" }}
+            />
+            {selectedBrochureItems.length > 0 && (
+              <div style={{
+                marginTop: "0.75rem",
+                padding: "0.75rem",
+                background: "rgba(33, 150, 83, 0.05)",
+                borderRadius: "8px",
+                fontSize: "0.875rem",
+                color: "var(--success)"
+              }}>
+                <strong>Brochure Items:</strong>{" "}
+                {selectedBrochureItems.map((item) => item.name).join(", ")}
+              </div>
+            )}
+          </div>
+
+          <button 
+            type="submit" 
+            className="ios-button ios-button-success" 
+            style={{ 
+              width: "100%",
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              color: "white",
+              border: "none",
+              fontSize: "1rem",
+              fontWeight: "600",
+              padding: "1rem",
+              boxShadow: "0 4px 16px rgba(16, 185, 129, 0.3)"
+            }}
           >
-            <option value="">{translations[language].selectItem}</option>
-            {items.map((item) => (
-              <option key={item.id} value={JSON.stringify(item)}>
-                {item.name} - {priceDisplay(item.price)} {currency}{" "}
-                {item.verified
-                  ? `(${translations[language].verified})`
-                  : `(${translations[language].notVerified})`}
-              </option>
-            ))}
-          </select>
-        </div>
-        <ul className="mb-4 sale-items-list">
-          {saleItems.map((item) => (
-            <li
-              key={item.id}
-              className="sale-item flex items-center justify-between p-2 border-b"
-            >
-              <div className="flex items-center">
-                <span className="font-medium mr-2">{item.name}</span>
-                <span
-                  className={`text-sm px-2 py-1 rounded ${
-                    item.verified
-                      ? "bg-green-200 text-green-800"
-                      : "bg-red-200 text-red-800"
-                  }`}
-                >
-                  {item.verified
-                    ? translations[language].verified
-                    : translations[language].notVerified}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => updateQuantity(item.id, e.target.value)}
-                  min="1"
-                  className="quantity-input w-16"
-                />
-                <span>
-                  x {priceDisplay(item.price)} ={" "}
-                  {priceDisplay(item.quantity * item.price)} {currency}
-                </span>
-                <label className="bonus-label">
-                  Bonus:
-                  <input
-                    type="number"
-                    value={item.bonus || ""}
-                    onChange={(e) => updateBonus(item.id, e.target.value)}
-                    min="0"
-                    step="0.01"
-                    className="bonus-input w-16"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => removeItemFromSale(item.id)}
-                  className="remove-btn text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <p className="mb-4 text-lg font-semibold">
-          {translations[language].total}: {totalDisplay()} {currency}
-        </p>
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">
-            {translations[language].saleDate}
-          </label>
-          <input
-            type="date"
-            value={saleDate}
-            onChange={(e) => setSaleDate(e.target.value)}
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">
-            {translations[language].note}
-          </label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={translations[language].note}
-            rows="3"
-          />
-          {selectedBrochureItems.length > 0 && (
-            <p className="brochure-note mt-2 text-sm text-[#67748e]">
-              <strong>Brochure Items:</strong>{" "}
-              {selectedBrochureItems.map((item) => item.name).join(", ")}
-            </p>
-          )}
-        </div>
-        <button type="submit" className="w-full">
-          {translations[language].saveSale}
-        </button>
-      </form>
+            {translations[language].saveSale}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

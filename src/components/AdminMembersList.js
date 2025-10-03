@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import {
   collection,
   getDocs,
   setDoc,
+  updateDoc,
   doc,
   deleteDoc,
 } from "firebase/firestore";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 const AdminMembersList = () => {
   const [members, setMembers] = useState([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
-  const [newMemberName, setNewMemberName] = useState(""); // New name field
-  const [newMemberPassword, setNewMemberPassword] = useState(""); // New password field
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberPassword, setNewMemberPassword] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("member");
   const [editingMember, setEditingMember] = useState(null);
   const [permissions, setPermissions] = useState({});
-  const [editPassword, setEditPassword] = useState(""); // Password for editing
+  const [editPassword, setEditPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -27,49 +30,83 @@ const AdminMembersList = () => {
   }, []);
 
   const handleAddMember = async () => {
-    if (!newMemberEmail || !newMemberName) return; // Require name and email
-    const newMemberRef = doc(db, "users", newMemberEmail);
-    const defaultPermissions = {
-      salesSummary: true,
-      dailySales: true,
-      salesData: true,
-      salesReports: true,
-      items: newMemberRole === "admin",
-      settings: newMemberRole === "admin",
-      salesForecast: true,
-      adminMembers: newMemberRole === "admin",
-      followUp: newMemberRole === "admin",
-      pharmaLocations: true,
-      brochure: true,
-    };
-    const newMemberData = {
-      email: newMemberEmail,
-      name: newMemberName, // Store name
-      password: newMemberPassword || "defaultPassword123", // Store password (for demo purposes)
-      role: newMemberRole,
-      permissions:
-        newMemberRole === "admin"
-          ? {
-              ...defaultPermissions,
-              items: true,
-              settings: true,
-              adminMembers: true,
-              followUp: true,
-              brochure: true,
-            }
-          : defaultPermissions,
-      monthlyTargetPrices: {},
-    };
-    await setDoc(newMemberRef, newMemberData);
-    setMembers([...members, { id: newMemberEmail, ...newMemberData }]);
-    setNewMemberEmail("");
-    setNewMemberName("");
-    setNewMemberPassword("");
-    setNewMemberRole("member");
+    if (!newMemberEmail || !newMemberName || !newMemberPassword) {
+      setError("Email, name, and password are required.");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        newMemberEmail,
+        newMemberPassword
+      );
+      const user = userCredential.user;
+
+      await updateProfile(user, { displayName: newMemberName });
+
+      const defaultPermissions = {
+        salesSummary: true,
+        dailySales: true,
+        salesData: true,
+        salesReports: true,
+        items: newMemberRole === "admin",
+        settings: newMemberRole === "admin",
+        salesForecast: true,
+        adminMembers: newMemberRole === "admin",
+        followUp: newMemberRole === "admin",
+        pharmaLocations: true,
+        brochure: true,
+        // New permission fields - regular users start with false, admin gets true
+        viewAllSalesData: newMemberRole === "admin",
+        changeVisitStatus: false, // Regular users can be granted this
+        changePermissions: newMemberRole === "admin",
+        changePrice: false, // Regular users can be granted this
+        changeBonus: false, // Regular users can be granted this
+      };
+
+      const newMemberData = {
+        email: newMemberEmail,
+        name: newMemberName, // Always defined here
+        role: newMemberRole,
+        permissions:
+          newMemberRole === "admin"
+            ? {
+                ...defaultPermissions,
+                items: true,
+                settings: true,
+                adminMembers: true,
+                followUp: true,
+                brochure: true,
+                // Admin gets all new permissions
+                viewAllSalesData: true,
+                changeVisitStatus: true,
+                changePermissions: true,
+                changePrice: true,
+                changeBonus: true,
+              }
+            : defaultPermissions,
+        monthlyTargetPrices: {},
+      };
+
+      await setDoc(doc(db, "users", user.uid), newMemberData);
+      setMembers([...members, { id: user.uid, ...newMemberData }]);
+      setNewMemberEmail("");
+      setNewMemberName("");
+      setNewMemberPassword("");
+      setNewMemberRole("member");
+      setError("");
+    } catch (error) {
+      console.error("Error adding member:", error);
+      setError(error.message);
+    }
   };
 
   const handleEditMember = (member) => {
-    setEditingMember(member);
+    setEditingMember({
+      ...member,
+      name: member.name || "", // Default to empty string if undefined
+    });
     setPermissions(
       member.role === "admin"
         ? {
@@ -84,10 +121,16 @@ const AdminMembersList = () => {
             followUp: true,
             pharmaLocations: true,
             brochure: true,
+            // Admin gets all new permissions
+            viewAllSalesData: true,
+            changeVisitStatus: true,
+            changePermissions: true,
+            changePrice: true,
+            changeBonus: true,
           }
         : member.permissions || {}
     );
-    setEditPassword(member.password || ""); // Load existing password
+    setEditPassword("");
   };
 
   const handleSavePermissions = async () => {
@@ -107,22 +150,35 @@ const AdminMembersList = () => {
             followUp: true,
             pharmaLocations: true,
             brochure: true,
+            // Admin gets all new permissions
+            viewAllSalesData: true,
+            changeVisitStatus: true,
+            changePermissions: true,
+            changePrice: true,
+            changeBonus: true,
           }
         : permissions;
+
     const updatedData = {
       permissions: updatedPermissions,
       role: editingMember.role,
-      password: editPassword, // Update password
-      name: editingMember.name, // Preserve name
+      name: editingMember.name || "", // Default to empty string if undefined
     };
-    await setDoc(memberRef, updatedData, { merge: true });
-    setMembers(
-      members.map((m) =>
-        m.id === editingMember.id ? { ...m, ...updatedData } : m
-      )
-    );
-    setEditingMember(null);
-    setEditPassword("");
+
+    try {
+      await updateDoc(memberRef, updatedData);
+      setMembers(
+        members.map((m) =>
+          m.id === editingMember.id ? { ...m, ...updatedData } : m
+        )
+      );
+      setEditingMember(null);
+      setEditPassword("");
+      alert("Permissions updated successfully!");
+    } catch (error) {
+      console.error("Error saving permissions:", error);
+      setError(error.message);
+    }
   };
 
   const handleDeleteMember = async (id) => {
@@ -132,7 +188,13 @@ const AdminMembersList = () => {
   };
 
   const togglePermission = (key) => {
-    if (editingMember?.role === "admin") return;
+    // Allow toggling for all users, but admin permissions are locked to true
+    if (editingMember?.role === "admin" && [
+      'items', 'settings', 'adminMembers', 'followUp', 
+      'viewAllSalesData', 'changePermissions'
+    ].includes(key)) {
+      return; // These are locked for admin
+    }
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -150,140 +212,352 @@ const AdminMembersList = () => {
     brochure: "Brochure",
   };
 
+  const salesDataPermissions = {
+    viewAllSalesData: "View All Users Sales Data",
+    changeVisitStatus: "Change Visit Status",
+    changePermissions: "Change User Permissions",
+    changePrice: "Change Price",
+    changeBonus: "Change Bonus",
+  };
+
   return (
-    <div className="container admin-members-container">
-      <div className="card admin-members-card">
-        <h2 className="settings-form h2">Admin Members List</h2>
-        <div className="filters mb-6">
-          <input
-            type="email"
-            placeholder="Enter member email"
-            value={newMemberEmail}
-            onChange={(e) => setNewMemberEmail(e.target.value)}
-            className="input-field"
-          />
-          <input
-            type="text"
-            placeholder="Enter member name"
-            value={newMemberName}
-            onChange={(e) => setNewMemberName(e.target.value)}
-            className="input-field"
-          />
-          <input
-            type="password"
-            placeholder="Enter member password"
-            value={newMemberPassword}
-            onChange={(e) => setNewMemberPassword(e.target.value)}
-            className="input-field"
-          />
-          <select
-            value={newMemberRole}
-            onChange={(e) => setNewMemberRole(e.target.value)}
-            className="select-field"
-          >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </select>
+    <div className="container">
+      <div className="ios-glassy-container">
+        <h2 style={{
+          fontSize: "1.75rem",
+          fontWeight: "700",
+          marginBottom: "1.5rem",
+          color: "var(--dark)",
+          textAlign: "center"
+        }}>
+          Admin Members List
+        </h2>
+        
+        {error && (
+          <div className="ios-card" style={{
+            background: "rgba(211, 64, 83, 0.05)",
+            border: "1px solid rgba(211, 64, 83, 0.1)",
+            marginBottom: "1.5rem"
+          }}>
+            <div style={{
+              color: "var(--danger)",
+              fontWeight: "500"
+            }}>
+              {error}
+            </div>
+          </div>
+        )}
+        
+        {/* Add New Member Form */}
+        <div className="ios-card" style={{
+          background: "rgba(60, 80, 224, 0.05)",
+          border: "1px solid rgba(60, 80, 224, 0.1)",
+          marginBottom: "2rem"
+        }}>
+          <h3 style={{
+            fontSize: "1.25rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            color: "var(--primary)"
+          }}>
+            Add New Member
+          </h3>
+          
+          <div className="ios-grid ios-grid-2">
+            <div className="ios-form-group">
+              <label className="ios-label">Email</label>
+              <input
+                className="ios-input"
+                type="email"
+                placeholder="Enter member email"
+                value={newMemberEmail}
+                onChange={(e) => setNewMemberEmail(e.target.value)}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Name</label>
+              <input
+                className="ios-input"
+                type="text"
+                placeholder="Enter member name"
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Password</label>
+              <input
+                className="ios-input"
+                type="password"
+                placeholder="Enter password"
+                value={newMemberPassword}
+                onChange={(e) => setNewMemberPassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Role</label>
+              <select
+                className="ios-select"
+                value={newMemberRole}
+                onChange={(e) => setNewMemberRole(e.target.value)}
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          
           <button
             onClick={handleAddMember}
-            className="navbar-btn navbar-logout-btn"
+            className="ios-button"
+            style={{ width: "100%" }}
           >
             Add Member
           </button>
         </div>
-        <ul className="space-y-4">
+        
+        {/* Members List */}
+        <div className="ios-grid ios-grid-1">
           {members.map((member) => (
-            <li
-              key={member.id}
-              className="daily-sales-form li flex justify-between items-center"
-            >
-              <div>
-                <p className="font-semibold text-[#1f2a44]">
-                  <strong>Name:</strong> {member.name || "Unnamed"}
-                </p>
-                <p className="text-[#67748e]">
-                  <strong>Email:</strong> {member.email}
-                </p>
-                <p className="text-[#67748e]">
-                  <strong>Role:</strong> {member.role}
-                </p>
+            <div key={member.id} className="ios-card">
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "1rem"
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: "1.125rem",
+                    fontWeight: "600",
+                    color: "var(--dark)",
+                    marginBottom: "0.5rem"
+                  }}>
+                    {member.name || "Unnamed"}
+                  </div>
+                  <div style={{
+                    fontSize: "0.9rem",
+                    color: "var(--body)",
+                    marginBottom: "0.25rem"
+                  }}>
+                    <strong>Email:</strong> {member.email}
+                  </div>
+                  <div style={{
+                    fontSize: "0.9rem",
+                    color: "var(--body)"
+                  }}>
+                    <strong>Role:</strong> 
+                    <span style={{
+                      marginLeft: "0.5rem",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "8px",
+                      fontSize: "0.75rem",
+                      fontWeight: "600",
+                      background: member.role === "admin" 
+                        ? "rgba(60, 80, 224, 0.1)" 
+                        : "rgba(33, 150, 83, 0.1)",
+                      color: member.role === "admin" 
+                        ? "var(--primary)" 
+                        : "var(--success)"
+                    }}>
+                      {member.role}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="ios-input-group">
+                  <button
+                    onClick={() => handleEditMember(member)}
+                    className="ios-button"
+                    style={{
+                      padding: "0.5rem 1rem",
+                      fontSize: "0.875rem",
+                      background: "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)"
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMember(member.id)}
+                    className="ios-button ios-button-danger"
+                    style={{
+                      padding: "0.5rem 1rem",
+                      fontSize: "0.875rem"
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="navbar-buttons">
-                <button
-                  onClick={() => handleEditMember(member)}
-                  className="navbar-btn"
-                  style={{ backgroundColor: "#f1c40f", color: "#fff" }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteMember(member.id)}
-                  className="navbar-btn"
-                  style={{ backgroundColor: "#e74c3c" }}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
 
+      {/* Edit Member Modal */}
       {editingMember && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000
+        }}>
+          <div className="ios-glassy-container" style={{
+            maxWidth: "600px",
+            width: "90%",
+            maxHeight: "90vh",
+            overflowY: "auto"
+          }}>
+            <h3 style={{
+              fontSize: "1.5rem",
+              fontWeight: "700",
+              color: "var(--dark)",
+              marginBottom: "1.5rem",
+              textAlign: "center"
+            }}>
               Edit {editingMember.name || editingMember.email}
             </h3>
-            <input
-              type="text"
-              placeholder="Update name"
-              value={editingMember.name || ""}
-              onChange={(e) =>
-                setEditingMember({ ...editingMember, name: e.target.value })
-              }
-              className="input-field mb-3"
-            />
-            <input
-              type="password"
-              placeholder="Update password"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              className="input-field mb-3"
-            />
-            <div className="space-y-3">
-              {Object.keys(menuPermissions).map((key) => (
-                <div key={key} className="toggle-container">
-                  <span className="toggle-label">{menuPermissions[key]}</span>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={permissions[key] || false}
-                      onChange={() => togglePermission(key)}
-                      disabled={editingMember.role === "admin"}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              ))}
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Name</label>
+              <input
+                className="ios-input"
+                type="text"
+                placeholder="Update name"
+                value={editingMember.name || ""}
+                onChange={(e) =>
+                  setEditingMember({ ...editingMember, name: e.target.value })
+                }
+              />
             </div>
-            {editingMember.role === "admin" && (
-              <p className="text-[#67748e] mt-2">
-                Admin permissions are locked to full access.
-              </p>
-            )}
-            <div className="modal-actions">
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Password (Optional)</label>
+              <input
+                className="ios-input"
+                type="password"
+                placeholder="Update password (optional)"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Menu Permissions</label>
+              <div className="ios-grid ios-grid-2" style={{ gap: "0.75rem" }}>
+                {Object.keys(menuPermissions).map((key) => (
+                  <div key={key} style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0.75rem",
+                    background: "rgba(255, 255, 255, 0.5)",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(0, 0, 0, 0.05)"
+                  }}>
+                    <span style={{
+                      fontSize: "0.875rem",
+                      fontWeight: "500",
+                      color: "var(--dark)"
+                    }}>
+                      {menuPermissions[key]}
+                    </span>
+                    <label className="ios-switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions[key] || false}
+                        onChange={() => togglePermission(key)}
+                        disabled={editingMember.role === "admin"}
+                      />
+                      <span className="ios-switch-slider"></span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+              
+              {editingMember.role === "admin" && (
+                <div style={{
+                  marginTop: "1rem",
+                  padding: "0.75rem",
+                  background: "rgba(60, 80, 224, 0.05)",
+                  borderRadius: "8px",
+                  fontSize: "0.875rem",
+                  color: "var(--primary)",
+                  fontStyle: "italic"
+                }}>
+                  Admin menu permissions are locked to full access.
+                </div>
+              )}
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Sales Data Permissions</label>
+              <div className="ios-grid ios-grid-1" style={{ gap: "0.75rem" }}>
+                {Object.keys(salesDataPermissions).map((key) => (
+                  <div key={key} style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0.75rem",
+                    background: "rgba(255, 255, 255, 0.5)",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(0, 0, 0, 0.05)"
+                  }}>
+                    <span style={{
+                      fontSize: "0.875rem",
+                      fontWeight: "500",
+                      color: "var(--dark)"
+                    }}>
+                      {salesDataPermissions[key]}
+                    </span>
+                    <label className="ios-switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions[key] || false}
+                        onChange={() => togglePermission(key)}
+                        disabled={editingMember.role === "admin"}
+                      />
+                      <span className="ios-switch-slider"></span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+              
+              {editingMember.role === "admin" && (
+                <div style={{
+                  marginTop: "1rem",
+                  padding: "0.75rem",
+                  background: "rgba(60, 80, 224, 0.05)",
+                  borderRadius: "8px",
+                  fontSize: "0.875rem",
+                  color: "var(--primary)",
+                  fontStyle: "italic"
+                }}>
+                  Admin sales data permissions are locked to full access.
+                </div>
+              )}
+            </div>
+            
+            <div className="ios-input-group" style={{ marginTop: "1.5rem" }}>
               <button
                 onClick={handleSavePermissions}
-                className="navbar-btn"
-                style={{ backgroundColor: "#10b981" }}
+                className="ios-button ios-button-success"
+                style={{ flex: 1 }}
               >
                 Save
               </button>
               <button
                 onClick={() => setEditingMember(null)}
-                className="navbar-btn"
-                style={{ backgroundColor: "#67748e" }}
+                className="ios-button ios-button-danger"
               >
                 Cancel
               </button>

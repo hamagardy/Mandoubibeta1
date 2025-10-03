@@ -141,94 +141,139 @@ const SalesReports = ({ currency, exchangeRate, role }) => {
 
   return (
     <div className="container">
-      <h2
-        style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem" }}
-      >
-        {translations[language].salesReports}
-      </h2>
-      <div className="filters">
-        <select
-          value={selectedCustomer}
-          onChange={(e) => setSelectedCustomer(e.target.value)}
-        >
-          <option value="">{translations[language].allCustomers}</option>
-          {uniqueCustomers.map((customer) => (
-            <option key={customer} value={customer}>
-              {customer}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(Number(e.target.value))}
-        >
-          <option value={-1}>{translations[language].allMonths}</option>
-          {monthsOfYear.map((month, index) => (
-            <option key={index} value={index}>
-              {month}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedDay}
-          onChange={(e) => setSelectedDay(Number(e.target.value))}
-        >
-          <option value={-1}>{translations[language].allDays}</option>
-          {daysOfMonth.map((day) => (
-            <option key={day} value={day}>
-              Day {day}
-            </option>
-          ))}
-        </select>
+      <div className="ios-glassy-container">
+        <h2 style={{
+          fontSize: "1.75rem",
+          fontWeight: "700",
+          marginBottom: "1.5rem",
+          color: "var(--dark)",
+          textAlign: "center"
+        }}>
+          {translations[language].salesReports}
+        </h2>
+        
+        <div className="ios-filters">
+          <select
+            className="ios-select"
+            value={selectedCustomer}
+            onChange={(e) => setSelectedCustomer(e.target.value)}
+            style={{ minWidth: "150px" }}
+          >
+            <option value="">{translations[language].allCustomers}</option>
+            {uniqueCustomers.map((customer) => (
+              <option key={customer} value={customer}>
+                {customer}
+              </option>
+            ))}
+          </select>
+          
+          <select
+            className="ios-select"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            style={{ minWidth: "150px" }}
+          >
+            <option value={-1}>{translations[language].allMonths}</option>
+            {monthsOfYear.map((month, index) => (
+              <option key={index} value={index}>
+                {month}
+              </option>
+            ))}
+          </select>
+          
+          <select
+            className="ios-select"
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(Number(e.target.value))}
+            style={{ minWidth: "120px" }}
+          >
+            <option value={-1}>{translations[language].allDays}</option>
+            {daysOfMonth.map((day) => (
+              <option key={day} value={day}>
+                Day {day}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="ios-input-group" style={{ justifyContent: "center", marginTop: "1rem" }}>
+          <button
+            onClick={handleExportPDF}
+            className="ios-button"
+          >
+            {translations[language].exportAsPDF}
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="ios-button ios-button-success"
+          >
+            {translations[language].exportAsExcel}
+          </button>
+        </div>
       </div>
-      <div className="sales-reports-container">
+      
+      <div className="ios-grid ios-grid-1">
         {filteredSales.length > 0 ? (
           filteredSales.map((sale) => (
-            <div key={sale.id} className="sales-report-card">
-              <h3>{sale.customerName}</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Field</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Total</td>
-                    <td>
-                      {priceDisplay(sale.totalPrice)} {currency}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Date</td>
-                    <td>{new Date(sale.date).toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td>Items</td>
-                    <td>
-                      {sale.items
-                        .map((item) => `${item.name} (x${item.quantity})`)
-                        .join(", ")}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div key={sale.id} className="ios-card">
+              <h3 style={{
+                fontSize: "1.25rem",
+                fontWeight: "700",
+                marginBottom: "1rem",
+                color: "var(--dark)"
+              }}>
+                {sale.customerName}
+              </h3>
+              
+              <div style={{ overflowX: "auto" }}>
+                <table className="ios-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ fontWeight: "600" }}>Total</td>
+                      <td style={{ fontWeight: "600", color: "var(--primary)" }}>
+                        {priceDisplay(sale.totalPrice)} {currency}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "600" }}>Date</td>
+                      <td>{new Date(sale.date).toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "600" }}>Items</td>
+                      <td>
+                        {sale.items
+                          .map((item) => `${item.name} (x${item.quantity})`)
+                          .join(", ")}
+                      </td>
+                    </tr>
+                    {sale.note && (
+                      <tr>
+                        <td style={{ fontWeight: "600" }}>Note</td>
+                        <td style={{ fontStyle: "italic" }}>{sale.note}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))
         ) : (
-          <p style={{ textAlign: "center", color: "#67748e" }}>
-            {translations[language].noSalesFound}
-          </p>
+          <div className="ios-card" style={{ textAlign: "center", padding: "3rem" }}>
+            <div style={{
+              fontSize: "1.125rem",
+              color: "var(--body)",
+              fontWeight: "500"
+            }}>
+              {translations[language].noSalesFound}
+            </div>
+          </div>
         )}
-      </div>
-      <div className="export-buttons">
-        <button onClick={handleExportPDF}>
-          {translations[language].exportAsPDF}
-        </button>
-        <button onClick={handleExportExcel}>
-          {translations[language].exportAsExcel}
-        </button>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import PharmaLocations from "./components/PharmaLocations";
 import Brochure from "./components/Brochure";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./components/Login";
+import WelcomePopup from "./components/WelcomePopup";
 import { LanguageProvider } from "./components/LanguageContext";
 import { SellerProvider } from "./components/SellerContext";
 import { auth, db } from "./firebase";
@@ -45,6 +46,7 @@ const AppContent = ({
   resetAllSales,
   changeCurrency,
   updateTargetPrice,
+  updateUserPermissions,
   setMonthlyTargetPrices,
   selectedBrochureItems,
   setSelectedBrochureItems,
@@ -53,18 +55,15 @@ const AppContent = ({
   const [hasRedirected, setHasRedirected] = React.useState(false);
 
   useEffect(() => {
-    // Reset hasRedirected when user changes to allow redirect on logout
     setHasRedirected(false);
   }, [user]);
 
   useEffect(() => {
     if (!hasRedirected) {
       if (user) {
-        // Redirect to Sales Summary after login
         navigate("/");
         setHasRedirected(true);
       } else {
-        // Redirect to login if no user (after logout)
         navigate("/login");
         setHasRedirected(true);
       }
@@ -100,7 +99,7 @@ const AppContent = ({
               <DailySalesEntry
                 currency={currency}
                 exchangeRate={exchangeRate}
-                selectedBrochureItems={selectedBrochureItems} // Pass to all users
+                selectedBrochureItems={selectedBrochureItems}
                 setSelectedBrochureItems={setSelectedBrochureItems}
               />
             }
@@ -110,6 +109,7 @@ const AppContent = ({
             element={
               <SalesData
                 role={role}
+                permissions={permissions}
                 currency={currency}
                 exchangeRate={exchangeRate}
               />
@@ -153,6 +153,7 @@ const AppContent = ({
                 role={role}
                 currency={currency}
                 exchangeRate={exchangeRate}
+                monthlyTargetPrices={monthlyTargetPrices}
               />
             }
           />
@@ -185,6 +186,7 @@ const AppContent = ({
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>
+      <WelcomePopup user={user} />
       <footer className="footer">
         <p>
           Mandoubi App Beta 1 powered by{" "}
@@ -210,13 +212,6 @@ function App() {
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [selectedBrochureItems, setSelectedBrochureItems] = React.useState([]);
-
-  // Removed role-based clearing of selectedBrochureItems
-  // useEffect(() => {
-  //   if (role && role !== "admin") {
-  //     setSelectedBrochureItems([]);
-  //   }
-  // }, [role]);
 
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
@@ -252,10 +247,23 @@ function App() {
                         followUp: true,
                         pharmaLocations: true,
                         brochure: true,
+                        // New permission fields for admin
+                        viewAllSalesData: true,
+                        changeVisitStatus: true,
+                        changePermissions: true,
+                        changePrice: true,
+                        changeBonus: true,
                       }
                     : userData.permissions || {}
                 );
+                // Ensure monthlyTargetPrices is always set from Firestore
                 setMonthlyTargetPrices(userData.monthlyTargetPrices || {});
+                console.log(
+                  "Fetched monthlyTargetPrices for user",
+                  currentUser.uid,
+                  ":",
+                  userData.monthlyTargetPrices || {}
+                );
               } else {
                 const defaultRole =
                   currentUser.uid === "qBnUF4aOaYPxHP2VlDdQOq2sEKl2"
@@ -273,7 +281,14 @@ function App() {
                   followUp: defaultRole === "admin",
                   pharmaLocations: true,
                   brochure: true,
+                  // New permission fields - regular users start with false, can be granted by admin
+                  viewAllSalesData: defaultRole === "admin",
+                  changeVisitStatus: false, // Regular users start with false
+                  changePermissions: defaultRole === "admin",
+                  changePrice: false, // Regular users start with false
+                  changeBonus: false, // Regular users start with false
                 };
+                const initialTargets = {}; // Empty initially, updated by admin
                 setRole(defaultRole);
                 setPermissions(
                   defaultRole === "admin"
@@ -289,6 +304,12 @@ function App() {
                         followUp: true,
                         pharmaLocations: true,
                         brochure: true,
+                        // New permission fields for admin
+                        viewAllSalesData: true,
+                        changeVisitStatus: true,
+                        changePermissions: true,
+                        changePrice: true,
+                        changeBonus: true,
                       }
                     : defaultPermissions
                 );
@@ -296,8 +317,9 @@ function App() {
                   email: currentUser.email,
                   role: defaultRole,
                   permissions: defaultPermissions,
-                  monthlyTargetPrices: {},
+                  monthlyTargetPrices: initialTargets,
                 });
+                setMonthlyTargetPrices(initialTargets);
               }
               setLoading(false);
             },
@@ -350,23 +372,61 @@ function App() {
     if (user) {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { monthlyTargetPrices: updatedTargets });
+      console.log(
+        "Admin updated monthlyTargetPrices for user",
+        user.uid,
+        ":",
+        updatedTargets
+      );
 
       if (role === "admin") {
         const usersRef = collection(db, "users");
         const snapshot = await getDocs(usersRef);
         await Promise.all(
-          snapshot.docs
-            .filter((doc) => doc.id !== user.uid)
-            .map((doc) =>
-              updateDoc(doc.ref, {
-                monthlyTargetPrices: {
-                  ...doc.data().monthlyTargetPrices,
-                  [month]: numericTarget,
-                },
-              })
-            )
+          snapshot.docs.map((docSnap) => {
+            const docRef = doc(db, "users", docSnap.id);
+            const currentTargets = docSnap.data().monthlyTargetPrices || {};
+            return updateDoc(docRef, {
+              monthlyTargetPrices: {
+                ...currentTargets,
+                [month]: numericTarget,
+              },
+            });
+          })
+        );
+        console.log(
+          "Admin propagated monthlyTargetPrices to all users:",
+          updatedTargets
         );
       }
+    }
+  };
+
+  const updateUserPermissions = async (permission, value) => {
+    if (role !== "admin" || !user) {
+      throw new Error("Only admin can update permissions");
+    }
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const updatedPermissions = { ...permissions, [permission]: value };
+      
+      await updateDoc(userRef, { permissions: updatedPermissions });
+      setPermissions(updatedPermissions);
+      
+      console.log(
+        "Updated permission",
+        permission,
+        "to",
+        value,
+        "for user",
+        user.uid
+      );
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating user permissions:", error);
+      throw error;
     }
   };
 
@@ -392,6 +452,7 @@ function App() {
             resetAllSales={resetAllSales}
             changeCurrency={changeCurrency}
             updateTargetPrice={updateTargetPrice}
+            updateUserPermissions={updateUserPermissions}
             setMonthlyTargetPrices={setMonthlyTargetPrices}
             selectedBrochureItems={selectedBrochureItems}
             setSelectedBrochureItems={setSelectedBrochureItems}

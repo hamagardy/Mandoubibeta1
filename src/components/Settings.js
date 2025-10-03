@@ -1,3 +1,4 @@
+// Settings.js (unchanged except for logging)
 import React, { useState, useContext } from "react";
 import { LanguageContext } from "./LanguageContext";
 
@@ -67,6 +68,12 @@ const Settings = ({
       return;
     await updateTargetPrice(numericTargetPrice, currentMonth);
     setLocalTargetPrice(numericTargetPrice);
+    console.log(
+      "Settings: Updated target for month",
+      currentMonth,
+      "to",
+      numericTargetPrice
+    ); // Debug log
     alert("Target price updated successfully for the current month!");
   };
 
@@ -92,70 +99,121 @@ const Settings = ({
 
   return (
     <div className="container">
-      <form className="settings-form">
-        <h2>{translations[language].settings}</h2>
-        <div>
-          <label>{translations[language].language}</label>
-          <select
-            value={language}
-            onChange={(e) => changeLanguage(e.target.value)}
-          >
-            <option value="en">English (EN)</option>
-            <option value="ar">العربية (AR)</option>
-            <option value="ku">کوردی (KU)</option>
-          </select>
-        </div>
-        {isAdmin && (
-          <>
-            <div>
-              <label>{translations[language].targetPriceSettings}</label>
-              <p>
-                {translations[language].currentTargetPrice} {localTargetPrice}{" "}
-                {currentCurrency}
-              </p>
-              <input
-                type="number"
-                value={localTargetPrice}
-                onChange={(e) => setLocalTargetPrice(e.target.value)}
-              />
-              <button type="button" onClick={handleSaveTargetPrice}>
-                {translations[language].saveTargetPrice}
-              </button>
-            </div>
-            <div>
-              <label>{translations[language].currencySettings}</label>
-              <button
-                type="button"
-                onClick={() => changeCurrency("IQD")}
-                style={{
-                  backgroundColor:
-                    currentCurrency === "IQD" ? "#5e72e4" : "#e9ecef",
-                  marginRight: "0.5rem",
-                }}
-              >
-                {translations[language].iq}
-              </button>
-              <button
-                type="button"
-                onClick={() => changeCurrency("USD")}
-                style={{
-                  backgroundColor:
-                    currentCurrency === "USD" ? "#5e72e4" : "#e9ecef",
-                }}
-              >
-                {translations[language].usd}
-              </button>
-            </div>
-            <button
-              type="button"
-              className="reset-btn"
-              onClick={handleResetSales}
+      <div className="ios-glassy-container">
+        <h2 style={{
+          fontSize: "1.75rem",
+          fontWeight: "700",
+          marginBottom: "1.5rem",
+          color: "var(--dark)",
+          textAlign: "center"
+        }}>
+          {translations[language].settings}
+        </h2>
+        
+        <div className="ios-grid ios-grid-1" style={{ gap: "1.5rem" }}>
+          <div className="ios-card">
+            <label className="ios-label">{translations[language].language}</label>
+            <select
+              className="ios-select"
+              value={language}
+              onChange={(e) => changeLanguage(e.target.value)}
             >
-              {translations[language].resetSalesData}
-            </button>
-          </>
-        )}
-      </form>
+              <option value="en">English (EN)</option>
+              <option value="ar">العربية (AR)</option>
+              <option value="ku">کوردی (KU)</option>
+            </select>
+          </div>
+          
+          {isAdmin && (
+            <>
+              <div className="ios-card">
+                <label className="ios-label">{translations[language].targetPriceSettings}</label>
+                <div style={{
+                  padding: "1rem",
+                  background: "rgba(60, 80, 224, 0.05)",
+                  borderRadius: "12px",
+                  marginBottom: "1rem"
+                }}>
+                  <div style={{
+                    fontSize: "1rem",
+                    fontWeight: "600",
+                    color: "var(--primary)"
+                  }}>
+                    {translations[language].currentTargetPrice} {localTargetPrice.toLocaleString()} {currentCurrency}
+                  </div>
+                </div>
+                <input
+                  className="ios-input"
+                  type="number"
+                  value={localTargetPrice}
+                  onChange={(e) => setLocalTargetPrice(e.target.value)}
+                  style={{ marginBottom: "1rem" }}
+                />
+                <button 
+                  type="button" 
+                  onClick={handleSaveTargetPrice}
+                  className="ios-button"
+                  style={{ width: "100%" }}
+                >
+                  {translations[language].saveTargetPrice}
+                </button>
+              </div>
+              
+              <div className="ios-card">
+                <label className="ios-label">{translations[language].currencySettings}</label>
+                <div className="ios-input-group">
+                  <button
+                    type="button"
+                    onClick={() => changeCurrency("IQD")}
+                    className={`ios-button ${
+                      currentCurrency === "IQD" ? "" : "ios-button-secondary"
+                    }`}
+                    style={{
+                      flex: 1,
+                      background: currentCurrency === "IQD" 
+                        ? "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)"
+                        : "rgba(0, 0, 0, 0.05)",
+                      color: currentCurrency === "IQD" ? "var(--white)" : "var(--dark)"
+                    }}
+                  >
+                    {translations[language].iq}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeCurrency("USD")}
+                    className={`ios-button ${
+                      currentCurrency === "USD" ? "" : "ios-button-secondary"
+                    }`}
+                    style={{
+                      flex: 1,
+                      background: currentCurrency === "USD" 
+                        ? "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)"
+                        : "rgba(0, 0, 0, 0.05)",
+                      color: currentCurrency === "USD" ? "var(--white)" : "var(--dark)"
+                    }}
+                  >
+                    {translations[language].usd}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="ios-card" style={{
+                background: "rgba(211, 64, 83, 0.05)",
+                border: "1px solid rgba(211, 64, 83, 0.1)"
+              }}>
+                <button
+                  type="button"
+                  className="ios-button ios-button-danger"
+                  onClick={handleResetSales}
+                  style={{ width: "100%" }}
+                >
+                  {translations[language].resetSalesData}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

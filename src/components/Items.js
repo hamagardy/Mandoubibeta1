@@ -168,192 +168,389 @@ const Items = ({ currency, exchangeRate, setSelectedBrochureItems }) => {
     currency === "USD" ? (price / exchangeRate).toFixed(2) : price;
 
   return (
-    <div className="items-page">
-      <h2>{translations[language].title}</h2>
-      <ul className="items-list">
-        {items.map((item) => (
-          <li key={item.id} className="item-card">
-            {editingItem && editingItem.id === item.id ? (
-              <div className="item-form">
-                <input
-                  type="text"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder={translations[language].newItemNamePlaceholder}
-                />
-                <input
-                  type="number"
-                  value={newItemPrice}
-                  onChange={(e) => setNewItemPrice(e.target.value)}
-                  placeholder={translations[language].pricePlaceholder}
-                />
-                <textarea
-                  value={newItemDescription}
-                  onChange={(e) => setNewItemDescription(e.target.value)}
-                  placeholder={translations[language].descriptionPlaceholder}
-                />
-                <input
-                  type="text"
-                  value={newItemImageUrl}
-                  onChange={(e) => setNewItemImageUrl(e.target.value)}
-                  placeholder={translations[language].imageUrlPlaceholder}
-                />
-                <input
-                  type="text"
-                  value={newItemGroup}
-                  onChange={(e) => setNewItemGroup(e.target.value)}
-                  placeholder={translations[language].groupPlaceholder}
-                />
-                {newItemImageUrl && (
-                  <img
-                    src={newItemImageUrl}
-                    alt="Preview"
-                    className="form-image-preview"
-                    onClick={() => handleImageClick(newItemImageUrl)}
-                  />
-                )}
-                <div className="toggle-container">
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={newItemVerified}
-                      onChange={(e) => setNewItemVerified(e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span>
-                    {newItemVerified
-                      ? translations[language].verified
-                      : translations[language].notVerified}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="item-content">
-                <div className="flex items-center">
-                  {item.imageUrl && (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="item-image"
-                      onClick={() => handleImageClick(item.imageUrl)}
-                    />
-                  )}
-                  <div className="item-info">
-                    <div className="item-name">
-                      <span>{item.name}</span>
-                      <span
-                        className={`verification-badge ${
-                          item.verified ? "verified" : "not-verified"
-                        }`}
-                      >
-                        {item.verified
-                          ? translations[language].verified
-                          : translations[language].notVerified}
-                      </span>
-                    </div>
-                    <p className="item-price">
-                      {priceDisplay(item.price)} {currency}
-                    </p>
-                    <p className="item-description">
-                      {item.description || "No description"}
-                    </p>
-                    <p className="item-group">
-                      <strong>Group:</strong> {item.group || "None"}
-                    </p>
-                  </div>
-                </div>
-                <div className="item-actions">
-                  {item.imageUrl && (
-                    <button
-                      onClick={() => handleDownload(item.imageUrl, item.name)}
-                      className="btn btn-download"
-                    >
-                      {translations[language].download}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="btn btn-edit"
-                  >
-                    {translations[language].edit}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="btn btn-delete"
-                  >
-                    {translations[language].delete}
-                  </button>
-                </div>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <div className="new-item-form">
-        <input
-          type="text"
-          value={newItemName}
-          onChange={(e) => setNewItemName(e.target.value)}
-          placeholder={translations[language].newItemNamePlaceholder}
-        />
-        <input
-          type="number"
-          value={newItemPrice}
-          onChange={(e) => setNewItemPrice(e.target.value)}
-          placeholder={translations[language].pricePlaceholder}
-        />
-        <textarea
-          value={newItemDescription}
-          onChange={(e) => setNewItemDescription(e.target.value)}
-          placeholder={translations[language].descriptionPlaceholder}
-        />
-        <input
-          type="text"
-          value={newItemImageUrl}
-          onChange={(e) => setNewItemImageUrl(e.target.value)}
-          placeholder={translations[language].imageUrlPlaceholder}
-        />
-        <input
-          type="text"
-          value={newItemGroup}
-          onChange={(e) => setNewItemGroup(e.target.value)}
-          placeholder={translations[language].groupPlaceholder}
-        />
-        {newItemImageUrl && (
-          <img
-            src={newItemImageUrl}
-            alt="Preview"
-            className="form-image-preview"
-            onClick={() => handleImageClick(newItemImageUrl)}
-          />
-        )}
-        <div className="toggle-container">
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={newItemVerified}
-              onChange={(e) => setNewItemVerified(e.target.checked)}
+    <div className="container">
+      <div className="ios-glassy-container">
+        <h2 style={{
+          fontSize: "1.75rem",
+          fontWeight: "700",
+          marginBottom: "1.5rem",
+          color: "var(--dark)",
+          textAlign: "center"
+        }}>
+          {translations[language].title}
+        </h2>
+        
+        {/* New Item Form */}
+        <div className="ios-card" style={{
+          background: "rgba(60, 80, 224, 0.05)",
+          border: "1px solid rgba(60, 80, 224, 0.1)",
+          marginBottom: "2rem"
+        }}>
+          <h3 style={{
+            fontSize: "1.25rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            color: "var(--primary)"
+          }}>
+            {editingItem ? 'Edit Item' : 'Add New Item'}
+          </h3>
+          
+          <div className="ios-grid ios-grid-2">
+            <div className="ios-form-group">
+              <label className="ios-label">Item Name</label>
+              <input
+                className="ios-input"
+                type="text"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder={translations[language].newItemNamePlaceholder}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Price (IQD)</label>
+              <input
+                className="ios-input"
+                type="number"
+                value={newItemPrice}
+                onChange={(e) => setNewItemPrice(e.target.value)}
+                placeholder={translations[language].pricePlaceholder}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Group</label>
+              <input
+                className="ios-input"
+                type="text"
+                value={newItemGroup}
+                onChange={(e) => setNewItemGroup(e.target.value)}
+                placeholder={translations[language].groupPlaceholder}
+              />
+            </div>
+            
+            <div className="ios-form-group">
+              <label className="ios-label">Image URL</label>
+              <input
+                className="ios-input"
+                type="text"
+                value={newItemImageUrl}
+                onChange={(e) => setNewItemImageUrl(e.target.value)}
+                placeholder={translations[language].imageUrlPlaceholder}
+              />
+            </div>
+          </div>
+          
+          <div className="ios-form-group">
+            <label className="ios-label">Description</label>
+            <textarea
+              className="ios-textarea"
+              value={newItemDescription}
+              onChange={(e) => setNewItemDescription(e.target.value)}
+              placeholder={translations[language].descriptionPlaceholder}
+              rows="3"
             />
-            <span className="toggle-slider"></span>
-          </label>
-          <span>
-            {newItemVerified
-              ? translations[language].verified
-              : translations[language].notVerified}
-          </span>
+          </div>
+          
+          <div className="ios-form-group">
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem"
+            }}>
+              <label className="ios-label" style={{ margin: 0 }}>Verified:</label>
+              <div style={{
+                position: "relative",
+                display: "inline-block",
+                width: "51px",
+                height: "31px"
+              }}>
+                <input
+                  type="checkbox"
+                  checked={newItemVerified}
+                  onChange={(e) => setNewItemVerified(e.target.checked)}
+                  style={{
+                    opacity: 0,
+                    width: 0,
+                    height: 0
+                  }}
+                />
+                <span style={{
+                  position: "absolute",
+                  cursor: "pointer",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: newItemVerified ? "#34c759" : "#e5e5ea",
+                  borderRadius: "34px",
+                  transition: "background-color 0.3s ease"
+                }}>
+                  <span style={{
+                    position: "absolute",
+                    content: "",
+                    height: "27px",
+                    width: "27px",
+                    left: "2px",
+                    bottom: "2px",
+                    backgroundColor: "#ffffff",
+                    borderRadius: "50%",
+                    transition: "transform 0.3s ease",
+                    transform: newItemVerified ? "translateX(20px)" : "translateX(0)",
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)"
+                  }}></span>
+                </span>
+              </div>
+              <span style={{
+                fontSize: "0.875rem",
+                color: newItemVerified ? "var(--success)" : "var(--danger)"
+              }}>
+                {newItemVerified ? translations[language].verified : translations[language].notVerified}
+              </span>
+            </div>
+          </div>
+          
+          {newItemImageUrl && (
+            <div className="ios-form-group">
+              <label className="ios-label">Preview</label>
+              <img
+                src={newItemImageUrl}
+                alt="Preview"
+                onClick={() => handleImageClick(newItemImageUrl)}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  objectFit: "cover",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  border: "1px solid rgba(0, 0, 0, 0.1)"
+                }}
+              />
+            </div>
+          )}
+          
+          <div className="ios-input-group">
+            <button
+              onClick={handleSave}
+              className="ios-button"
+              style={{ flex: 1 }}
+            >
+              {editingItem ? 'Update Item' : translations[language].save}
+            </button>
+            {editingItem && (
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setNewItemName("");
+                  setNewItemPrice("");
+                  setNewItemDescription("");
+                  setNewItemImageUrl("");
+                  setNewItemGroup("");
+                  setNewItemVerified(false);
+                }}
+                className="ios-button ios-button-danger"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
-        <button onClick={handleSave} className="btn btn-save">
-          {translations[language].save}
-        </button>
+        
+        {/* Items List - 2 Column Grid for iPhone 14 Pro Max */}
+        <div className="ios-grid ios-grid-2" style={{ gap: "1rem" }}>
+          {items.map((item) => (
+            <div key={item.id} className="ios-card" style={{
+              display: "flex",
+              flexDirection: "column",
+              height: "500px", // Optimized for iPhone 14 Pro Max
+              overflow: "hidden"
+            }}>
+              {/* Large Image Section */}
+              <div style={{
+                width: "100%",
+                height: "300px",
+                overflow: "hidden",
+                borderRadius: "12px",
+                marginBottom: "1rem",
+                cursor: "pointer",
+                background: "#f8f9fa"
+              }} onClick={() => item.imageUrl && handleImageClick(item.imageUrl)}>
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      objectPosition: "center",
+                      transition: "transform 0.3s ease"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = "scale(1)";
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--body)",
+                    fontSize: "0.875rem"
+                  }}>
+                    No Image
+                  </div>
+                )}
+              </div>
+              
+              {/* Item Details */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <h3 style={{
+                  fontSize: "1.125rem",
+                  fontWeight: "600",
+                  color: "var(--dark)",
+                  marginBottom: "0.5rem",
+                  lineHeight: "1.2",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem"
+                }}>
+                  {item.name}
+                  <span style={{
+                    fontSize: "0.75rem",
+                    padding: "0.25rem 0.5rem",
+                    borderRadius: "8px",
+                    background: item.verified
+                      ? "rgba(33, 150, 83, 0.1)"
+                      : "rgba(211, 64, 83, 0.1)",
+                    color: item.verified
+                      ? "var(--success)"
+                      : "var(--danger)"
+                  }}>
+                    {item.verified ? "✅" : "❌"}
+                  </span>
+                </h3>
+                
+                <div style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  color: "var(--primary)",
+                  marginBottom: "0.75rem"
+                }}>
+                  {priceDisplay(item.price).toLocaleString()} {currency}
+                </div>
+                
+                {item.group && (
+                  <div style={{
+                    fontSize: "0.875rem",
+                    color: "var(--body)",
+                    marginBottom: "0.5rem",
+                    padding: "0.25rem 0.5rem",
+                    background: "rgba(0, 0, 0, 0.05)",
+                    borderRadius: "8px",
+                    textAlign: "center"
+                  }}>
+                    {item.group}
+                  </div>
+                )}
+                
+                {item.description && (
+                  <p style={{
+                    fontSize: "0.875rem",
+                    color: "var(--body)",
+                    marginBottom: "1rem",
+                    lineHeight: "1.4",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: "2",
+                    WebkitBoxOrient: "vertical"
+                  }}>
+                    {item.description}
+                  </p>
+                )}
+              </div>
+              
+              <div className="ios-input-group" style={{ justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="ios-button"
+                  style={{
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.875rem"
+                  }}
+                >
+                  {translations[language].edit}
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="ios-button ios-button-danger"
+                  style={{
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.875rem"
+                  }}
+                >
+                  {translations[language].delete}
+                </button>
+                {item.imageUrl && (
+                  <button
+                    onClick={() => handleDownload(item.imageUrl, item.name)}
+                    className="ios-button ios-button-success"
+                    style={{
+                      padding: "0.5rem 1rem",
+                      fontSize: "0.875rem"
+                    }}
+                  >
+                    {translations[language].download}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
+      {/* Image Modal */}
       {selectedImage && (
-        <div className="image-modal" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={selectedImage} alt="Full Size" className="full-image" />
-            <button onClick={closeModal} className="btn btn-close">
+        <div onClick={closeModal} style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000
+        }}>
+          <div className="ios-glassy-container" style={{
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem"
+          }}>
+            <img
+              src={selectedImage}
+              alt="Full view"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "70vh",
+                objectFit: "contain",
+                borderRadius: "12px"
+              }}
+            />
+            <button
+              onClick={closeModal}
+              className="ios-button ios-button-danger"
+            >
               Close
             </button>
           </div>
